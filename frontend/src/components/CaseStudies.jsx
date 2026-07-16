@@ -17,7 +17,7 @@ const studies = [
     metricLabel: 'Qualified enquiries',
     metric2: '18+',
     metric2Label: 'First-page rankings',
-    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1600&q=80',
+    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1600&q=80',
   },
   {
     slug: 'maison-noir',

@@ -14,7 +14,7 @@ const studies = [
     href: '/case-studies/sharma-furniture',
     story: 'A trusted Jamshedpur furniture house, taught to be discovered, trusted and chosen online weeks before a customer walks in.',
     metric: '+26%', m1: 'Qualified enquiries', metric2: '18+', m2: 'First-page rankings',
-    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1600&q=80',
+    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1600&q=80',
   },
   {
     client: 'Maison Noir', industry: 'Luxury D2C', tag: 'Brand + Content',

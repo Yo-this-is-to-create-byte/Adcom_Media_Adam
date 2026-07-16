@@ -10,7 +10,7 @@ import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
 
 const team = [
-  { name: 'Aarav Khanna', role: 'Founding Partner · Growth', img: 'https://i.pravatar.cc/300?img=12' },
+  { name: 'Amit Shukla', role: 'Founding Partner · Growth', img: 'https://i.pravatar.cc/300?img=12' },
   { name: 'Ishita Rao', role: 'Founding Partner · Brand', img: 'https://i.pravatar.cc/300?img=47' },
   { name: 'Vihaan Mehta', role: 'Head of Performance', img: 'https://i.pravatar.cc/300?img=11' },
   { name: 'Kabir Patel', role: 'Creative Director', img: 'https://i.pravatar.cc/300?img=15' },

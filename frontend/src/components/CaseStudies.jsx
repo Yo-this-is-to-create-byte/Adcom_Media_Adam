@@ -75,52 +75,13 @@ const studies = [
     metric2Label: 'SEO enquiries',
     image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1600&q=80',
   },
-  {
-    slug: 'maison-noir',
-    client: 'Maison Noir',
-    industry: 'Luxury D2C',
-    tag: 'Brand + Content',
-    story:
-      'A wordless brand world for a luxury house that refused to look like anyone else. Cinematic content, an editorial site and a drop strategy that now sells out in hours.',
-    metric: '+340%',
-    metricLabel: 'AOV uplift',
-    metric2: '92k',
-    metric2Label: 'Drop waitlist',
-    image: 'https://images.unsplash.com/photo-1620207418302-439b387441b0?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    slug: 'orbit-saas',
-    client: 'Orbit',
-    industry: 'B2B SaaS',
-    tag: 'AI SEO + LinkedIn',
-    story:
-      'Orbit was invisible in the AI answer layer. We rebuilt their content engine for LLM retrieval and founder-led LinkedIn, pipeline now compounds without paid spend.',
-    metric: '8.1x',
-    metricLabel: 'Inbound pipeline',
-    metric2: '#1',
-    metric2Label: 'Cited in Perplexity',
-    image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    slug: 'numa-wellness',
-    client: 'Numa',
-    industry: 'Wellness',
-    tag: 'Performance + Lifecycle',
-    story:
-      'A subscription wellness brand stuck on a leaky funnel. We rebuilt acquisition, onboarding and retention into a single revenue system, and it has compounded every quarter since.',
-    metric: '4.7x',
-    metricLabel: 'Customer LTV',
-    metric2: '63%',
-    metric2Label: '12-mo retention',
-    image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1600&q=80',
-  },
 ];
 
 export default function CaseStudies() {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
   // total cards width, translate to show all
-  const x = useTransform(scrollYProgress, [0, 1], ['0%', '-80%']);
+  const x = useTransform(scrollYProgress, [0, 1], ['0%', '-65%']);
 
   return (
     <section
@@ -179,9 +140,6 @@ export default function CaseStudies() {
                     {/* Bottom content */}
                     <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 flex flex-col gap-6">
                       <div>
-                        <div className="text-xs md:text-sm uppercase tracking-[0.25em] text-[#A0A0A0] mb-3">
-                          {s.client}
-                        </div>
                         <p className="font-display text-lg md:text-xl lg:text-2xl leading-snug tracking-tight text-white/95 max-w-lg">
                           {s.story}
                         </p>

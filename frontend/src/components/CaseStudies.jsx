@@ -20,6 +20,20 @@ const studies = [
     image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1600&q=80',
   },
   {
+    slug: 'prochem',
+    href: '/case-studies/prochem',
+    client: 'Prochem Turnkey Projects',
+    industry: 'B2B · Engineering',
+    tag: 'LinkedIn · Founder-led',
+    story:
+      'A twenty-year-old engineering house turned into the LinkedIn feed every plant head in India quietly follows, without ever running a campaign.',
+    metric: '13k+',
+    metricLabel: 'Followers (from 4k)',
+    metric2: '128k',
+    metric2Label: 'Impressions · 12 mo',
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
     slug: 'maison-noir',
     client: 'Maison Noir',
     industry: 'Luxury D2C',

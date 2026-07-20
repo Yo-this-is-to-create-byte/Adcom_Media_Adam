@@ -17,6 +17,13 @@ const studies = [
     image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1600&q=80',
   },
   {
+    client: 'Prochem Turnkey Projects', industry: 'B2B · Engineering', tag: 'LinkedIn · Founder-led',
+    href: '/case-studies/prochem',
+    story: 'A twenty-year-old engineering house turned into the LinkedIn feed every plant head in India quietly follows, without a single paid campaign.',
+    metric: '13k+', m1: 'Followers (from 4k)', metric2: '128k', m2: 'Impressions · 12 mo',
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
     client: 'Maison Noir', industry: 'Luxury D2C', tag: 'Brand + Content',
     story: 'A wordless luxury brand world the internet recognises in a single frame, and a drop strategy that sells out in hours.',
     metric: '+340%', m1: 'AOV uplift', metric2: '92k', m2: 'Drop waitlist',

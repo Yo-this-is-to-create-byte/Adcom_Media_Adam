@@ -27,6 +27,7 @@ import ContactPage from '@/pages/ContactPage';
 import Blog from '@/pages/Blog';
 import BlogPost from '@/pages/BlogPost';
 import CaseStudySharmaFurniture from '@/pages/CaseStudySharmaFurniture';
+import CaseStudyProchem from '@/pages/CaseStudyProchem';
 
 function Landing() {
   return (
@@ -68,6 +69,7 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/case-studies/sharma-furniture" element={<CaseStudySharmaFurniture />} />
+        <Route path="/case-studies/prochem" element={<CaseStudyProchem />} />
       </Routes>
     </BrowserRouter>
   );

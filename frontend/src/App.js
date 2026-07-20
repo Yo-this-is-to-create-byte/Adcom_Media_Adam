@@ -28,6 +28,9 @@ import Blog from '@/pages/Blog';
 import BlogPost from '@/pages/BlogPost';
 import CaseStudySharmaFurniture from '@/pages/CaseStudySharmaFurniture';
 import CaseStudyProchem from '@/pages/CaseStudyProchem';
+import CaseStudyProfotech from '@/pages/CaseStudyProfotech';
+import CaseStudyAusTyre from '@/pages/CaseStudyAusTyre';
+import CaseStudySkylarr from '@/pages/CaseStudySkylarr';
 
 function Landing() {
   return (
@@ -70,6 +73,9 @@ function App() {
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/case-studies/sharma-furniture" element={<CaseStudySharmaFurniture />} />
         <Route path="/case-studies/prochem" element={<CaseStudyProchem />} />
+        <Route path="/case-studies/profotech" element={<CaseStudyProfotech />} />
+        <Route path="/case-studies/aus-tyre" element={<CaseStudyAusTyre />} />
+        <Route path="/case-studies/skylarr" element={<CaseStudySkylarr />} />
       </Routes>
     </BrowserRouter>
   );

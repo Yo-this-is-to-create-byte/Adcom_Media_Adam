@@ -1,33 +1,34 @@
-# Adcom Media — PRD
+# Adcom Media — Premium Digital Marketing Agency Website
 
-## Problem Statement
-Build a world-class digital marketing agency website for "Adcom Media" that feels premium, cinematic, conversion-focused. Reference: Overdose Digital, Ramotion, Locomotive, Active Theory, Linear, Stripe, Framer.
+## Original Problem Statement
+Build a world-class, premium digital marketing agency website for "Adcom Media". Must feel expensive, bold, confident — dark theme (#000000), white text, red accents (#E11D2E / #F43F5E), Inter font (900-weight headings), smooth Framer Motion animations. A high-converting growth engine with service pages, case studies, blog, dynamic enquiry forms, and email lead generation.
 
 ## Architecture
-- Frontend: React (CRA) + Tailwind + Framer Motion + Inter font (900 weight)
-- Backend: FastAPI on /api, MongoDB via motor
-- Single landing page with anchor-based sections
+- **Frontend**: React (CRA) SPA, `react-router-dom`, Tailwind + shadcn/ui, Framer Motion animations.
+- **Backend**: FastAPI + `motor` (async MongoDB) + `resend` (transactional email).
+- **DB**: MongoDB. `contacts` collection stores dynamic lead data.
+- **Location**: Agency location is strictly "Pune".
 
-## Personas
-- Founders/CMOs of ambitious D2C, SaaS, fintech brands considering a premium growth partner.
+## Design System (STRICT)
+Dark theme, red accents, Inter (900 headings), specific spacing, Framer Motion. Do NOT introduce new UI patterns, colors, or generic components. One form per page via wrappers in `src/components/enquiries.jsx`.
 
-## Core Requirements (static)
-- Pure black bg #000000, primary text #FFFFFF, secondary #A0A0A0, accent #4F46E5 (hover #6366F1)
-- Inter 900 headings, 400-500 body. Hero 80-120px, sections 48-64px, body 18-20px.
-- Sections: Header, Hero, Marquee, Services (8), Case Studies (horizontal scroll), Why Adcom (counters), Process (4 steps), Testimonials, Contact, Footer
-- Premium animations: char reveals, parallax orbs, magnetic buttons, custom cursor, scroll-linked horizontal scroll, counter animation, marquee, image masking
-- Responsive desktop + tablet + mobile
+## Key Pages
+Homepage, Service pages (Performance/Growth/Brand Strategy/AI-SEO), Case Studies (index + deep-dives), About, Process, Blog, Careers, Contact.
 
-## Implemented (2026-12)
-- Backend: POST/GET /api/contact, MongoDB persistence, EmailStr validation
-- Frontend: All 9 sections per brief, custom cursor, magnetic buttons, character-by-character hero reveal, scroll-linked horizontal case studies, animated counters, autoplay testimonials carousel, working contact form
-- Tests: 100% backend, 100% frontend (iteration_1.json)
+## Case Studies (portfolio)
+Deep-dive pages (real clients): Sharma Furnituree, Prochem, **Profotech**, **Australian Tyre Brand (aus-tyre)**, **Skylarr Labs**.
+Aspirational/illustrative (no dedicated page): Maison Noir, Orbit, Numa.
+All deep-dives use `CaseStudyTemplate.jsx` (data-driven). `founder` can be `null`.
 
-## Backlog
-- P1: Email notification on contact submit (Resend/SendGrid)
-- P1: Real case studies + client logos when client provides
-- P2: Dedicated /work and /services routes with deep case study pages
-- P2: Blog/Insights section
-- P2: Admin dashboard to view contact submissions
-- P2: Reduced-motion preference handling
-- P3: i18n, sitemap, analytics
+## Key API
+- `POST /api/contacts`: saves dynamic lead to MongoDB, triggers Resend email to `hello.adcommedia@gmail.com`.
+
+## 3rd-Party Integrations
+- Resend (email notifications) — API key configured in backend `.env`.
+
+## Changelog
+- 2026-02: Wired 3 new case studies (Profotech, Aus Tyre, Skylarr) into routing + homepage scroller + index page. Removed Kavi Coffee and Atlas Pay from the portfolio. Verified all pages render (screenshot smoke test, no console errors).
+
+## Backlog / Future
+- (Optional) Add smooth momentum scrolling (lenis) + on-load masked hero reveal for award-level polish — pending user go-ahead.
+- (Optional) Individual dedicated pages for aspirational studies if converted to real clients.

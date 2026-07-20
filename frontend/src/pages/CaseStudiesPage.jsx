@@ -25,6 +25,27 @@ const studies = [
     image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80',
   },
   {
+    client: 'Profotech Engineering', industry: 'Industrial Engineering', tag: 'Brand · Digital · Print',
+    href: '/case-studies/profotech',
+    story: 'An industrial engineering house rebuilt end-to-end, so the brand finally reads as precisely as the work it represents.',
+    metric: '20+', m1: 'Brand assets designed', metric2: '01', m2: 'Corporate website',
+    image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
+    client: 'Australian Tyre Brand', industry: 'E-commerce · Automotive', tag: 'Meta · Google · Shopping',
+    href: '/case-studies/aus-tyre',
+    story: '$6K a month of ad spend turned into a 7.5x ROAS engine and 100x business growth in a single year.',
+    metric: '7.5x', m1: 'Blended ROAS', metric2: '100x', m2: 'Business growth',
+    image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
+    client: 'Skylarr Labs', industry: 'PCD Pharma Franchise', tag: 'Website · SEO',
+    href: '/case-studies/skylarr',
+    story: 'A PCD pharma site rebuilt into the sales team. 4x organic traffic, 4x enquiries, on zero paid spend.',
+    metric: '4x', m1: 'Organic traffic', metric2: '4x', m2: 'SEO enquiries',
+    image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
     client: 'Maison Noir', industry: 'Luxury D2C', tag: 'Brand + Content',
     story: 'A wordless luxury brand world the internet recognises in a single frame, and a drop strategy that sells out in hours.',
     metric: '+340%', m1: 'AOV uplift', metric2: '92k', m2: 'Drop waitlist',
@@ -41,18 +62,6 @@ const studies = [
     story: 'A leaky subscription funnel rebuilt into a single revenue system, compounding every quarter since.',
     metric: '4.7x', m1: 'Customer LTV', metric2: '63%', m2: '12-mo retention',
     image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    client: 'Kavi Coffee', industry: 'F&B', tag: 'Brand + Content',
-    story: 'Quiet specialty coffee turned into India\'s most shared coffee feed. Every frame shot in-house.',
-    metric: '21M', m1: 'Organic views', metric2: '+540%', m2: 'DTC revenue',
-    image: 'https://images.unsplash.com/photo-1559526324-c1f275fbfa32?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    client: 'Atlas Pay', industry: 'Fintech', tag: 'AI SEO',
-    story: 'Default citation across the category\'s most-asked LLM prompts. AI surfaces became a real channel.',
-    metric: '+340%', m1: 'AI-driven sessions', metric2: '12x', m2: 'Brand citations',
-    image: 'https://images.unsplash.com/photo-1565514020179-026b92b84bb6?auto=format&fit=crop&w=1600&q=80',
   },
 ];
 

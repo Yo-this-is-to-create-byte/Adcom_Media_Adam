@@ -34,6 +34,48 @@ const studies = [
     image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1600&q=80',
   },
   {
+    slug: 'profotech',
+    href: '/case-studies/profotech',
+    client: 'Profotech Engineering',
+    industry: 'Industrial Engineering',
+    tag: 'Brand · Digital · Print',
+    story:
+      'An industrial engineering house rebuilt end-to-end, so the brand finally reads as precisely as the work it represents.',
+    metric: '20+',
+    metricLabel: 'Brand assets designed',
+    metric2: '01',
+    metric2Label: 'Corporate website',
+    image: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
+    slug: 'aus-tyre',
+    href: '/case-studies/aus-tyre',
+    client: 'Australian Tyre Brand',
+    industry: 'E-commerce · Automotive',
+    tag: 'Meta · Google · Shopping',
+    story:
+      '$6K a month of ad spend turned into a 7.5x ROAS engine and 100x business growth in a single year.',
+    metric: '7.5x',
+    metricLabel: 'Blended ROAS',
+    metric2: '100x',
+    metric2Label: 'Business growth',
+    image: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
+    slug: 'skylarr',
+    href: '/case-studies/skylarr',
+    client: 'Skylarr Labs',
+    industry: 'PCD Pharma Franchise',
+    tag: 'Website · SEO',
+    story:
+      'A PCD pharma site rebuilt into the sales team. 4x organic traffic, 4x enquiries, on zero paid spend.',
+    metric: '4x',
+    metricLabel: 'Organic traffic',
+    metric2: '4x',
+    metric2Label: 'SEO enquiries',
+    image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1600&q=80',
+  },
+  {
     slug: 'maison-noir',
     client: 'Maison Noir',
     industry: 'Luxury D2C',
@@ -71,19 +113,6 @@ const studies = [
     metric2: '63%',
     metric2Label: '12-mo retention',
     image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1600&q=80',
-  },
-  {
-    slug: 'kavi-coffee',
-    client: 'Kavi Coffee',
-    industry: 'F&B',
-    tag: 'Brand + Content',
-    story:
-      'We rebuilt a quiet specialty coffee brand into the most-shared coffee feed in India. Every frame is shot in-house, every story leads back to product.',
-    metric: '21M',
-    metricLabel: 'Organic views',
-    metric2: '+540%',
-    metric2Label: 'DTC revenue',
-    image: 'https://images.unsplash.com/photo-1559526324-c1f275fbfa32?auto=format&fit=crop&w=1600&q=80',
   },
 ];
 

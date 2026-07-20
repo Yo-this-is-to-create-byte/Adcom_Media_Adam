@@ -144,7 +144,6 @@ export default function CaseStudiesPage() {
 
         <CaseStudiesEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

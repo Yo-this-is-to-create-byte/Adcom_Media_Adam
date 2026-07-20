@@ -432,7 +432,6 @@ export default function ServicePage({ data }) {
         <Closing {...data.closing} />
         <ServiceEnquiry service={data.service || 'Growth'} />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

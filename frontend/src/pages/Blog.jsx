@@ -133,7 +133,6 @@ export default function Blog() {
 
         <BlogEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

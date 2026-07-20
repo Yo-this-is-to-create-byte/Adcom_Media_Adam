@@ -733,7 +733,6 @@ export default function CaseStudyProchem() {
         <FinalCTA />
         <CaseStudiesEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

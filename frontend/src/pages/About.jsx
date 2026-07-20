@@ -180,7 +180,6 @@ export default function AboutPage() {
 
         <AboutEnquiry />
         <FAQ />
-        <Contact />
       </main>
 
       <Footer />

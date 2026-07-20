@@ -134,7 +134,6 @@ export default function Careers() {
 
         <CareersEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

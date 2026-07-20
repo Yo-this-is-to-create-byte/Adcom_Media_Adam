@@ -656,7 +656,6 @@ export default function PerformanceMarketing() {
         <Closing />
         <ServiceEnquiry service="Performance Marketing" />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

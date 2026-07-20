@@ -135,7 +135,6 @@ export default function BlogPost() {
 
         <BlogEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

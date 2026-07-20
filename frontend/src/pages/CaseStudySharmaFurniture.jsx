@@ -731,7 +731,6 @@ export default function CaseStudySharmaFurniture() {
         <FinalCTA />
         <CaseStudiesEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

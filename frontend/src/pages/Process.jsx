@@ -107,7 +107,6 @@ export default function ProcessPage() {
 
         <ProcessEnquiry />
         <FAQ />
-        <Contact />
       </main>
       <Footer />
     </div>

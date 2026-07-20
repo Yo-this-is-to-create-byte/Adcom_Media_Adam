@@ -295,6 +295,18 @@ function Stories({ kicker = 'Selected growth stories', title, subtitle, stories 
             </motion.article>
           ))}
         </div>
+
+        <div className="mt-12 flex justify-center">
+          <Link
+            to="/case-studies"
+            data-testid="service-see-all-case-studies"
+            data-cursor="hover"
+            className="group inline-flex items-center gap-3 px-8 py-4 rounded-full border border-[rgba(255,255,255,0.15)] text-sm uppercase tracking-[0.2em] text-white hover:bg-white hover:text-black transition-colors duration-500"
+          >
+            See all case studies
+            <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -89,7 +89,7 @@ export default function Footer() {
             Independent · Performance-Led · Built in India
           </div>
           <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0]">
-            EST · 2025, Bengaluru / Dubai
+            EST · 2025, Pune / Bangalore
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function Footer() {
             </SocialLink>
           </div>
           <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#A0A0A0]">
-            Crafted with intent · Bengaluru
+            Crafted with intent · Pune
           </div>
         </div>
       </div>

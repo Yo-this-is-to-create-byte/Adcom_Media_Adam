@@ -9,12 +9,12 @@ import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 
 const roles = [
-  { title: 'Lead Growth Strategist', team: 'Growth', location: 'Bengaluru / Remote', type: 'Full-time' },
-  { title: 'Performance Marketing Lead', team: 'Performance', location: 'Bengaluru', type: 'Full-time' },
-  { title: 'Brand Designer (Lead)', team: 'Brand', location: 'Remote', type: 'Full-time' },
-  { title: 'AI SEO Editor', team: 'AI SEO', location: 'Remote', type: 'Full-time' },
-  { title: 'Creative Producer', team: 'Content', location: 'Bengaluru', type: 'Full-time' },
-  { title: 'Marketing Engineer', team: 'Automation', location: 'Remote', type: 'Full-time' },
+  { title: 'Lead Growth Strategist', team: 'Growth', location: 'Pune / Bangalore', type: 'Full-time' },
+  { title: 'Performance Marketing Lead', team: 'Performance', location: 'Pune', type: 'Full-time' },
+  { title: 'Brand Designer (Lead)', team: 'Brand', location: 'Bangalore', type: 'Full-time' },
+  { title: 'AI SEO Editor', team: 'AI SEO', location: 'Bangalore', type: 'Full-time' },
+  { title: 'Creative Producer', team: 'Content', location: 'Pune', type: 'Full-time' },
+  { title: 'Marketing Engineer', team: 'Automation', location: 'Bangalore', type: 'Full-time' },
 ];
 
 const principles = [

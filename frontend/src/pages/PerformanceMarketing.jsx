@@ -288,42 +288,45 @@ function Philosophy() {
 
 const stories = [
   {
-    slug: 'lumen',
-    client: 'Lumen Skincare',
-    industry: 'D2C Beauty',
-    challenge: 'Paid Meta plateaued at ₹40L/mo with deteriorating ROAS. Creative was the bottleneck, not budget.',
-    approach: 'Rebuilt the creative system around problem-led concepts, restructured CBOs for incrementality, and rewired the post-click experience.',
-    outcome: 'Scaled spend 3.4x in 90 days without ROAS decay. Customer acquisition cost fell quarter-over-quarter for four straight quarters.',
+    slug: 'aus-tyre',
+    href: '/case-studies/aus-tyre',
+    client: 'Australian Tyre Brand',
+    industry: 'E-commerce · Automotive',
+    challenge: '$6K a month of paid spend that wasn\'t paying. Thin margins, brutal competition, buyers searching by exact tyre spec.',
+    approach: 'Rebuilt the acquisition system around feed quality and intent, restructured Search by tyre-size taxonomy, cleaned Shopping and rebuilt the funnel end-to-end.',
+    outcome: 'Spend held flat while everything else compounded. Paid became the single most predictable source of new customers in the business.',
     metrics: [
-      { v: '+330%', l: 'Qualified leads' },
-      { v: '4.2x', l: 'Blended ROAS' },
-      { v: '−38%', l: 'Blended CAC' },
+      { v: '7.5x', l: 'Blended ROAS' },
+      { v: '100x', l: 'Business growth' },
+      { v: '150+', l: 'Attributable purchases' },
     ],
   },
   {
-    slug: 'forge',
-    client: 'Forge Athleisure',
-    industry: 'D2C Apparel',
-    challenge: 'Strong product, brittle funnel. Revenue swung 60% month-on-month and the team couldn\'t explain why.',
-    approach: 'Built a measurement model the team trusts, segmented audiences by purchase intent, and shifted creative cadence from monthly to weekly.',
-    outcome: 'Predictable, compounding revenue with a clear line from creative concept to contribution margin.',
+    slug: 'skylarr',
+    href: '/case-studies/skylarr',
+    client: 'Skylarr Labs',
+    industry: 'PCD Pharma Franchise',
+    challenge: 'Distributors research quietly online months before the first call, and Skylarr owned none of that surface.',
+    approach: 'Rebuilt the website around the distributor journey and layered a technical and on-page SEO engine with lead flows and WhatsApp handoff.',
+    outcome: '4x organic traffic and 4x enquiries on zero paid spend, and a site that now closes the room before Skylarr enters it.',
     metrics: [
-      { v: '+180%', l: 'Revenue growth' },
-      { v: '3.1x', l: 'Repeat purchase' },
-      { v: '14d', l: 'Time-to-decision' },
+      { v: '4x', l: 'Organic traffic' },
+      { v: '4x', l: 'SEO enquiries' },
+      { v: '+57%', l: 'Organic page views' },
     ],
   },
   {
-    slug: 'meridian',
-    client: 'Meridian B2B',
-    industry: 'Enterprise SaaS',
-    challenge: 'Pipeline was generous on the top, hollow at the bottom. Sales was closing meetings, not deals.',
-    approach: 'Re-architected paid + outbound around ICP intent signals, rebuilt LP narratives by buyer stage and rewired attribution to revenue.',
-    outcome: 'Pipeline quality replaced pipeline quantity as the operating metric, and ACV climbed with it.',
+    slug: 'sharma-furniture',
+    href: '/case-studies/sharma-furniture',
+    client: 'Sharma Furnituree',
+    industry: 'Furniture Retail',
+    challenge: 'A trusted local furniture house that was invisible online, chosen in-store but never found before the visit.',
+    approach: 'Rebuilt local discovery, search visibility and the on-site experience so customers arrive already trusting the brand.',
+    outcome: 'Qualified enquiries climbed and the brand now gets discovered, trusted and shortlisted weeks before a customer walks in.',
     metrics: [
-      { v: '+220%', l: 'SQL → Won' },
-      { v: '2.6x', l: 'ACV growth' },
-      { v: '−42%', l: 'Cost per SQL' },
+      { v: '+26%', l: 'Qualified enquiries' },
+      { v: '18+', l: 'First-page rankings' },
+      { v: '100%', l: 'Local intent captured' },
     ],
   },
 ];
@@ -365,6 +368,17 @@ function GrowthStories() {
                   <h3 className="font-display text-3xl md:text-4xl lg:text-5xl leading-[1.05] tracking-tight">
                     {s.client}
                   </h3>
+                  {s.href && (
+                    <Link
+                      to={s.href}
+                      data-testid={`perf-story-link-${s.slug}`}
+                      data-cursor="hover"
+                      className="group/link mt-6 inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-white/70 hover:text-white transition-colors"
+                    >
+                      Read the case study
+                      <ArrowUpRight size={14} className="transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                    </Link>
+                  )}
                 </div>
 
                 <div className="lg:col-span-8 space-y-8">

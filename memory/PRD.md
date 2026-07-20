@@ -28,6 +28,8 @@ All deep-dives use `CaseStudyTemplate.jsx` (data-driven). `founder` can be `null
 
 ## Changelog
 - 2026-02: Wired 3 new case studies (Profotech, Aus Tyre, Skylarr) into routing + homepage scroller + index page. Removed Kavi Coffee and Atlas Pay from the portfolio. Verified all pages render (screenshot smoke test, no console errors).
+- 2026-02: Homepage "Selected Work" trimmed to 5 real case studies (Sharma, Prochem, Profotech, Aus Tyre, Skylarr); removed brand-name label from cards; tuned horizontal scroll transform.
+- 2026-02: Replaced fictional "Selected growth stories" on all 4 service pages with real case studies + "Read the case study" deep links. Performance: Aus Tyre, Skylarr, Sharma. Growth: Sharma, Aus Tyre, Prochem. Brand: Profotech, Prochem. AI-SEO: Skylarr, Sharma. Aligned Brand/AI-SEO section headings to the real work. (Testimonial/quote sections still use fictional names — intentionally, to avoid fabricating quotes for real clients.)
 
 ## Backlog / Future
 - (Optional) Add smooth momentum scrolling (lenis) + on-load masked hero reveal for award-level polish — pending user go-ahead.

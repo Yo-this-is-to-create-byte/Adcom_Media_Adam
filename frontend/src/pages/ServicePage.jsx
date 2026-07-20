@@ -266,6 +266,17 @@ function Stories({ kicker = 'Selected growth stories', title, subtitle, stories 
                     {String(i + 1).padStart(2, '0')} · {s.industry}
                   </div>
                   <h3 className="font-display text-3xl md:text-4xl lg:text-5xl leading-[1.05] tracking-tight">{s.client}</h3>
+                  {s.href && (
+                    <Link
+                      to={s.href}
+                      data-testid={`service-story-link-${i}`}
+                      data-cursor="hover"
+                      className="group/link mt-6 inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-white/70 hover:text-white transition-colors"
+                    >
+                      Read the case study
+                      <ArrowUpRight size={14} className="transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                    </Link>
+                  )}
                 </div>
                 <div className="lg:col-span-8 space-y-8">
                   <StoryBlock label="Challenge" body={s.challenge} />

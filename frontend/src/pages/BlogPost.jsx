@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Contact from '@/components/Contact';
+import { BlogEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import { getPostBySlug, posts } from './blogPosts';
@@ -132,6 +133,7 @@ export default function BlogPost() {
           </div>
         </section>
 
+        <BlogEnquiry />
         <FAQ />
         <Contact />
       </main>

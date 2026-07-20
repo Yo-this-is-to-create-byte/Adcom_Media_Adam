@@ -3,6 +3,7 @@ import { TrendingUp, Map, Layers, Rocket, BarChart3, Repeat } from 'lucide-react
 import ServicePage from './ServicePage';
 
 const data = {
+  service: 'Growth Marketing',
   hero: {
     kicker: 'Service · Growth Marketing',
     headline: [

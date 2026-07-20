@@ -54,8 +54,21 @@ class ContactCreate(BaseModel):
     email: EmailStr
     company: Optional[str] = Field(default=None, max_length=160)
     website: Optional[str] = Field(default=None, max_length=200)
+    phone: Optional[str] = Field(default=None, max_length=40)
+    industry: Optional[str] = Field(default=None, max_length=120)
+    team_size: Optional[str] = Field(default=None, max_length=40)
     budget: Optional[str] = Field(default=None, max_length=60)
     services: Optional[List[str]] = Field(default_factory=list)
+    challenge: Optional[str] = Field(default=None, max_length=120)
+    timeline: Optional[str] = Field(default=None, max_length=60)
+    hear_about: Optional[str] = Field(default=None, max_length=200)
+    project_type: Optional[str] = Field(default=None, max_length=120)
+    position: Optional[str] = Field(default=None, max_length=120)
+    linkedin: Optional[str] = Field(default=None, max_length=200)
+    portfolio: Optional[str] = Field(default=None, max_length=200)
+    resume_url: Optional[str] = Field(default=None, max_length=500)
+    meeting_date: Optional[str] = Field(default=None, max_length=40)
+    source: Optional[str] = Field(default=None, max_length=80)
     message: str = Field(..., min_length=1, max_length=4000)
 
 
@@ -66,8 +79,21 @@ class Contact(BaseModel):
     email: EmailStr
     company: Optional[str] = None
     website: Optional[str] = None
+    phone: Optional[str] = None
+    industry: Optional[str] = None
+    team_size: Optional[str] = None
     budget: Optional[str] = None
     services: List[str] = Field(default_factory=list)
+    challenge: Optional[str] = None
+    timeline: Optional[str] = None
+    hear_about: Optional[str] = None
+    project_type: Optional[str] = None
+    position: Optional[str] = None
+    linkedin: Optional[str] = None
+    portfolio: Optional[str] = None
+    resume_url: Optional[str] = None
+    meeting_date: Optional[str] = None
+    source: Optional[str] = None
     message: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

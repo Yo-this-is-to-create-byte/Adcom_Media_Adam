@@ -17,10 +17,11 @@ const capabilities = [
 ];
 
 const investments = [
-  '₹2,50,000 – ₹5,00,000 / mo',
-  '₹5,00,000 – ₹10,00,000 / mo',
-  '₹10,00,000 – ₹25,00,000 / mo',
-  '₹25,00,000+ / mo',
+  'Under ₹35K / mo',
+  '₹35K – 50K / mo',
+  '₹50K – 1L / mo',
+  '₹1L – 3L / mo',
+  'Above ₹3L / mo',
 ];
 
 export default function Contact({

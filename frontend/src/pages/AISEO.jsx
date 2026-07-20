@@ -3,6 +3,7 @@ import { Bot, BookOpen, Database, Search, Sparkles, BarChart3 } from 'lucide-rea
 import ServicePage from './ServicePage';
 
 const data = {
+  service: 'AI SEO',
   hero: {
     kicker: 'Service · AI SEO',
     headline: [

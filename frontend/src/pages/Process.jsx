@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Contact from '@/components/Contact';
+import { ProcessEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 
@@ -104,6 +105,7 @@ export default function ProcessPage() {
           </div>
         </section>
 
+        <ProcessEnquiry />
         <FAQ />
         <Contact />
       </main>

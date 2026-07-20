@@ -15,6 +15,7 @@ import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import FAQ from '@/components/FAQ';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import { WorkEnquiry } from '@/components/enquiries';
 import PerformanceMarketing from '@/pages/PerformanceMarketing';
 import GrowthMarketing from '@/pages/GrowthMarketing';
 import BrandStrategy from '@/pages/BrandStrategy';
@@ -39,6 +40,7 @@ function Landing() {
         <Marquee />
         <Services />
         <CaseStudies />
+        <WorkEnquiry />
         <WhyAdcom />
         <Process />
         <Testimonials />

@@ -3,6 +3,7 @@ import { Compass, Type, Eye, Wand2, Palette, Layers } from 'lucide-react';
 import ServicePage from './ServicePage';
 
 const data = {
+  service: 'Brand Strategy',
   hero: {
     kicker: 'Service · Brand Strategy',
     headline: [

@@ -9,6 +9,7 @@ import {
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Contact from '@/components/Contact';
+import { CaseStudiesEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
@@ -730,6 +731,7 @@ export default function CaseStudyProchem() {
         <FounderSpotlight />
         <FinalOutcome />
         <FinalCTA />
+        <CaseStudiesEnquiry />
         <FAQ />
         <Contact />
       </main>

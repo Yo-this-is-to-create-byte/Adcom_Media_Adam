@@ -8,6 +8,7 @@ import Contact from '@/components/Contact';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
+import { ServiceEnquiry } from '@/components/enquiries';
 
 /* Small primitives reused across service pages */
 
@@ -429,6 +430,7 @@ export default function ServicePage({ data }) {
         <Principles {...data.principles} />
         <Testimonial {...data.testimonial} />
         <Closing {...data.closing} />
+        <ServiceEnquiry service={data.service || 'Growth'} />
         <FAQ />
         <Contact />
       </main>

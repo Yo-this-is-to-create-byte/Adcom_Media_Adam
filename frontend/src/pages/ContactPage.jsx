@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Contact from '@/components/Contact';
+import { PrimaryContactEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 
@@ -25,6 +26,7 @@ export default function ContactPage() {
           </div>
         </div>
         <FAQ />
+        <PrimaryContactEnquiry />
         <Contact variant="page" headline={`Let's build\nsomething\nthat grows.`} kicker="Engagement intake · Q1 open" />
       </main>
       <Footer />

@@ -267,7 +267,7 @@ function MenuOverlay({ open, onClose, go, goRoute }) {
                       <a href="mailto:hello.adcommedia@gmail.com" className="block text-white hover:text-[#F43F5E] transition-colors">
                         hello.adcommedia@gmail.com
                       </a>
-                      <div className="text-[#A0A0A0]">Pune · Bangalore</div>
+                      <div className="text-[#A0A0A0]">Pune</div>
                     </div>
                     <button
                       onClick={() => goRoute('/contact')}
@@ -289,7 +289,7 @@ function MenuOverlay({ open, onClose, go, goRoute }) {
                 className="mt-16 pt-8 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between text-xs uppercase tracking-[0.25em] text-[#A0A0A0]"
               >
                 <span>© {new Date().getFullYear()} Adcom Media</span>
-                <span>Independent · Performance-Led · Pune / Bangalore</span>
+                <span>Independent · Performance-Led · Pune</span>
               </motion.div>
             </div>
           </div>

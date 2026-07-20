@@ -120,7 +120,7 @@ export default function Contact({
               <div className="grid grid-cols-2 gap-6 pt-6 border-t border-[rgba(255,255,255,0.08)]">
                 <div>
                   <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0] mb-2">Studio</div>
-                  <div className="text-[15px]">Pune · Bangalore</div>
+                  <div className="text-[15px]">Pune</div>
                 </div>
                 <div>
                   <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0] mb-2">Intake</div>

@@ -89,7 +89,7 @@ export default function Footer() {
             Independent · Performance-Led · Built in India
           </div>
           <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0]">
-            EST · 2025, Pune / Bangalore
+            EST · 2025, Pune
           </div>
         </div>
 

@@ -71,7 +71,7 @@ function ContactInfoStrip() {
           </div>
           <div className="border-t border-[rgba(255,255,255,0.08)] px-6 md:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
             <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0] flex items-center gap-2">
-              <MapPin size={12} /> Pune · Bangalore
+              <MapPin size={12} /> Pune
             </div>
             <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0]">
               Independent · Performance-Led

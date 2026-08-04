@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -146,3 +147,98 @@ body {
     opacity: 0.5;
     pointer-events: none;
 }
+
+/* ================================================================== */
+/*  ADAM PROTOCOL — hidden easter egg cinematic OS                    */
+/* ================================================================== */
+.adam-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-feature-settings: 'ss01';
+}
+
+/* Fine engineering grid overlay */
+.adam-grid {
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 40%, transparent 100%);
+}
+
+/* Scanlines */
+.adam-scanlines {
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.025) 0px,
+        rgba(255, 255, 255, 0.025) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    animation: adam-scan 8s linear infinite;
+}
+@keyframes adam-scan {
+    0% { background-position-y: 0; }
+    100% { background-position-y: 100px; }
+}
+
+/* Soft crimson radial glow */
+.adam-glow {
+    background: radial-gradient(circle at 50% 45%, rgba(215, 38, 56, 0.16), transparent 55%);
+}
+
+/* Screen glitch flash (step 1) */
+@keyframes adam-glitch {
+    0%   { transform: translate(0,0); filter: none; opacity: 1; }
+    12%  { transform: translate(-4px, 2px); filter: hue-rotate(-20deg) saturate(2); }
+    22%  { transform: translate(5px, -3px); }
+    32%  { transform: translate(-2px, 0); opacity: 0.85; }
+    45%  { transform: translate(3px, 2px); }
+    60%  { transform: translate(0,0); filter: none; opacity: 1; }
+    100% { transform: translate(0,0); }
+}
+.adam-glitch-active { animation: adam-glitch 0.5s steps(2, jump-none) 1; }
+
+/* Blinking terminal cursor */
+@keyframes adam-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.adam-caret { animation: adam-blink 1s step-end infinite; }
+
+/* Slow rotation for core rings */
+@keyframes adam-spin { to { transform: rotate(360deg); } }
+@keyframes adam-spin-rev { to { transform: rotate(-360deg); } }
+.adam-spin { animation: adam-spin 24s linear infinite; transform-origin: center; }
+.adam-spin-slow { animation: adam-spin 42s linear infinite; transform-origin: center; }
+.adam-spin-rev { animation: adam-spin-rev 32s linear infinite; transform-origin: center; }
+
+/* Dashed connection dash-flow on world map */
+@keyframes adam-dash { to { stroke-dashoffset: -1000; } }
+.adam-dash { stroke-dasharray: 4 8; animation: adam-dash 30s linear infinite; }
+
+/* Core pulse */
+@keyframes adam-pulse-ring {
+    0% { transform: scale(0.85); opacity: 0.5; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+.adam-pulse-ring { animation: adam-pulse-ring 3.4s ease-out infinite; transform-origin: center; }
+
+/* Floating particles */
+@keyframes adam-float {
+    0%, 100% { transform: translateY(0) translateX(0); opacity: 0.25; }
+    50% { transform: translateY(-14px) translateX(6px); opacity: 0.6; }
+}
+.adam-float { animation: adam-float linear infinite; }
+
+/* Hide native cursor while booting */
+.adam-nocursor, .adam-nocursor * { cursor: none !important; }
+
+/* Logo secret glow (hover 8s) */
+@keyframes adam-logo-pulse {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(215, 38, 56, 0.5)); }
+    50% { filter: drop-shadow(0 0 18px rgba(215, 38, 56, 0.95)); }
+}
+.adam-logo-glow { animation: adam-logo-pulse 1.7s ease-in-out infinite; }
+
+/* Hide the site custom cursor while ADAM is booting */
+.adam-nocursor .custom-cursor { display: none !important; }
+
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
@@ -25,6 +25,11 @@ const servicePages = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [logoGlow, setLogoGlow] = useState(false);
+  const [secret, setSecret] = useState(false);
+  const clickCount = useRef(0);
+  const clickTimer = useRef(null);
+  const hoverTimer = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -65,6 +70,37 @@ export default function Header() {
     }
   };
 
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    // secret: triple-click reveals a message
+    clickCount.current += 1;
+    clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => { clickCount.current = 0; }, 600);
+    if (clickCount.current >= 3) {
+      clickCount.current = 0;
+      setSecret(true);
+      setTimeout(() => setSecret(false), 4200);
+      return;
+    }
+    // normal navigation
+    setOpen(false);
+    if (location.pathname !== '/') navigate('/');
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLogoEnter = () => {
+    hoverTimer.current = setTimeout(() => setLogoGlow(true), 8000);
+  };
+  const handleLogoLeave = () => {
+    clearTimeout(hoverTimer.current);
+    setLogoGlow(false);
+  };
+
+  useEffect(() => () => {
+    clearTimeout(clickTimer.current);
+    clearTimeout(hoverTimer.current);
+  }, []);
+
   return (
     <>
       <motion.header
@@ -81,23 +117,32 @@ export default function Header() {
           <a
             href="/"
             data-testid={NAV.logoLink}
-            onClick={(e) => {
-              e.preventDefault();
-              setOpen(false);
-              if (location.pathname !== '/') {
-                navigate('/');
-              } else {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }
-            }}
-            className="flex items-center group"
+            onClick={handleLogoClick}
+            onMouseEnter={handleLogoEnter}
+            onMouseLeave={handleLogoLeave}
+            className="relative flex items-center group"
             aria-label="Adcom Media, home"
           >
             <img
               src="https://customer-assets.emergentagent.com/job_adcom-vault/artifacts/4bimeq2z_Adcom%20Logo-03.png"
               alt="Adcom Media"
-              className="h-10 md:h-12 w-auto object-contain"
+              className={`h-10 md:h-12 w-auto object-contain transition-transform ${logoGlow ? 'adam-logo-glow scale-105' : ''}`}
             />
+            <AnimatePresence>
+              {secret && (
+                <motion.span
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.4 }}
+                  data-testid="logo-secret"
+                  className="absolute top-full left-0 mt-3 whitespace-nowrap rounded-lg border border-[#D72638]/40 bg-black/80 backdrop-blur-xl px-4 py-2.5 text-[11px] adam-mono uppercase tracking-[0.18em] text-white/80"
+                >
+                  Built by dreamers.
+                  <span className="text-[#D72638]"> Powered by coffee.</span>
+                </motion.span>
+              )}
+            </AnimatePresence>
           </a>
 
           <div className="flex items-center gap-4 md:gap-6">

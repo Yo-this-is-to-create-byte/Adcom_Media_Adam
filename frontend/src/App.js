@@ -15,6 +15,8 @@ import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import FAQ from '@/components/FAQ';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import AdamProtocol from '@/components/adam/AdamProtocol';
+import AdamBadge from '@/components/adam/AdamBadge';
 import PerformanceMarketing from '@/pages/PerformanceMarketing';
 import GrowthMarketing from '@/pages/GrowthMarketing';
 import BrandStrategy from '@/pages/BrandStrategy';
@@ -58,6 +60,8 @@ function App() {
   return (
     <BrowserRouter>
       <WhatsAppButton />
+      <AdamProtocol />
+      <AdamBadge />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/services/performance-marketing" element={<PerformanceMarketing />} />

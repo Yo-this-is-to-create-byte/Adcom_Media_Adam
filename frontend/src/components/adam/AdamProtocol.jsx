@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import useKonamiCode from '@/hooks/useKonamiCode';
+import adamAudio from './adamAudio';
 import AdamBackground from './AdamBackground';
 import AdamBoot from './AdamBoot';
 import AdamDashboard from './AdamDashboard';
@@ -24,11 +25,15 @@ export default function AdamProtocol() {
   const [active, setActive] = useState(false);
   const [phase, setPhase] = useState('boot'); // boot -> dashboard -> narrative -> explore
   const [showFinale, setShowFinale] = useState(false);
+  const [muted, setMuted] = useState(adamAudio.isMuted());
   const finaleTimer = useRef(null);
   const dashTimer = useRef(null);
   const navigate = useNavigate();
 
   const close = useCallback(() => {
+    adamAudio.cancelSpeech();
+    adamAudio.softConfirm();
+    adamAudio.stopAmbient(2);
     setActive(false);
     setShowFinale(false);
     setPhase('boot');
@@ -38,8 +43,18 @@ export default function AdamProtocol() {
     document.body.classList.remove('adam-nocursor');
   }, []);
 
+  // deliberate exit via a button — say a soft farewell first
+  const closeWithFarewell = useCallback(() => {
+    adamAudio.speak('Until next time.', { rate: 0.82, pitch: 0.9 });
+    setTimeout(() => close(), 900);
+  }, [close]);
+
   const activate = useCallback(() => {
     if (active) return;
+    adamAudio.resume();
+    adamAudio.confirmBeep();
+    adamAudio.glitch(0.45);
+    adamAudio.startAmbient(0.05, 2.4);
     setActive(true);
     setPhase('boot');
     try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) { /* ignore */ }
@@ -75,10 +90,36 @@ export default function AdamProtocol() {
   }, []);
 
   useEffect(() => {
-    if (phase !== 'dashboard') return;
+    if (phase !== 'dashboard') return undefined;
     dashTimer.current = setTimeout(() => setPhase('narrative'), 6500);
     return () => clearTimeout(dashTimer.current);
   }, [phase]);
+
+  // audio cues on phase changes
+  useEffect(() => {
+    if (!active) return;
+    if (phase === 'dashboard') {
+      adamAudio.setAmbient(0.065, 1.2);
+      adamAudio.softConfirm();
+      [0, 1, 2].forEach((i) => setTimeout(() => adamAudio.pulse(), 300 + i * 260));
+      setTimeout(() => adamAudio.scan(), 500);
+    } else if (phase === 'narrative') {
+      adamAudio.duckAmbient();
+    } else if (phase === 'explore') {
+      adamAudio.unduckAmbient();
+      adamAudio.keyboardInit();
+    }
+  }, [phase, active]);
+
+  // soft tone when the finale appears
+  useEffect(() => {
+    if (showFinale) {
+      adamAudio.cancelSpeech();
+      adamAudio.softConfirm();
+    }
+  }, [showFinale]);
+
+  const toggleMute = () => setMuted(adamAudio.toggleMuted());
 
   const bookCall = () => {
     close();
@@ -101,6 +142,16 @@ export default function AdamProtocol() {
         >
           <AdamBackground />
 
+          {/* mute / unmute toggle */}
+          <button
+            onClick={toggleMute}
+            data-testid="adam-mute-toggle"
+            aria-label={muted ? 'Unmute ADAM Protocol' : 'Mute ADAM Protocol'}
+            className="absolute top-4 left-4 md:top-6 md:left-8 z-40 w-10 h-10 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl flex items-center justify-center text-white/70 hover:text-white hover:border-white/40 transition-colors"
+          >
+            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
+
           {/* boot */}
           {phase === 'boot' && <AdamBoot onComplete={onBootDone} />}
 
@@ -121,7 +172,7 @@ export default function AdamProtocol() {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D72638] animate-pulse" /> ADAM Mode
               </span>
               <button
-                onClick={close}
+                onClick={closeWithFarewell}
                 data-testid="adam-exit-explore"
                 className="adam-mono text-[11px] uppercase tracking-[0.2em] px-4 py-2 rounded-full border border-white/15 text-white/80 hover:bg-white hover:text-black transition-colors"
               >

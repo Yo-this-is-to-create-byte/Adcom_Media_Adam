@@ -2,6 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, ChevronDown, Sparkles, X, Check, Minus } from 'lucide-react';
 import Typewriter from './Typewriter';
+import adamAudio from './adamAudio';
+
+const INTRO_SPEECH = [
+  { text: 'Hello.', pauseAfter: 600 },
+  { text: "I'm ADAM.", pauseAfter: 700 },
+  { text: 'Artificial Decision and Marketing Intelligence.', pauseAfter: 900 },
+  { text: 'Built inside ADCOM.', pauseAfter: 1300 },
+  { text: "You weren't supposed to discover this.", pauseAfter: 2600 },
+  { text: 'But...', pauseAfter: 500 },
+  { text: "Since you're here...", pauseAfter: 600 },
+  { text: "I'll show you how we think.", pauseAfter: 400 },
+];
 
 const INTRO = [
   { t: 'HELLO.', big: true },
@@ -97,6 +109,32 @@ export default function AdamNarrative({ onExplore, onExit, initialStep = 'intro'
     const t = setTimeout(() => setStep('choice'), 3200);
     return () => clearTimeout(t);
   }, [step]);
+
+  // ---- audio cues per step ----
+  useEffect(() => {
+    if (step === 'intro') {
+      adamAudio.speakSequence(INTRO_SPEECH);
+    } else {
+      adamAudio.cancelSpeech();
+      if (step === 'philosophy') {
+        PHILOSOPHY.forEach((_, i) => setTimeout(() => adamAudio.uiClick(), 250 + i * 500));
+      } else if (step === 'achievement') {
+        adamAudio.notification();
+      }
+    }
+  }, [step]);
+
+  // competitive analysis sounds
+  useEffect(() => {
+    if (step !== 'competitive') return;
+    if (!scanned) {
+      adamAudio.scan();
+      [0, 1, 2, 3, 4].forEach((i) => setTimeout(() => adamAudio.processTick(), 300 + i * 380));
+    } else {
+      ADCOM.forEach((_, i) => setTimeout(() => adamAudio.uiClick(), i * 120));
+      setTimeout(() => adamAudio.softConfirm(), 900);
+    }
+  }, [step, scanned]);
 
   return (
     <div className={shellCls}>

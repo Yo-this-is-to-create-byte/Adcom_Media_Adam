@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, animate, useMotionValue } from 'framer-motion';
+import adamAudio from './adamAudio';
 
 const LINES = [
   { t: '> INITIALIZING ADCOM CORE...', delay: 500 },
@@ -70,6 +71,18 @@ export default function AdamBoot({ onComplete }) {
       if (mountedRef.current) setVisible((v) => v + 1);
     }, LINES[visible].delay);
     return () => clearTimeout(t);
+  }, [stage, visible]);
+
+  // audio cues as each boot line reveals
+  useEffect(() => {
+    if (stage !== 'boot' || visible === 0) return;
+    const line = LINES[visible - 1];
+    if (line && line.bar !== undefined) {
+      [0, 1, 2, 3].forEach((i) => setTimeout(() => adamAudio.processTick(), i * 130));
+    } else {
+      adamAudio.uiClick();
+    }
+    if (visible >= LINES.length) setTimeout(() => adamAudio.softConfirm(), 200);
   }, [stage, visible]);
 
   if (stage === 'glitch') {

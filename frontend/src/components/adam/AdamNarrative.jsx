@@ -99,6 +99,7 @@ export default function AdamNarrative({ onExplore, onExit, initialStep = 'intro'
     if (step !== 'intro') return undefined;
     setIntroLine(-1);
     setIntroDone(false);
+    adamAudio.prefetch([...INTRO.map((l) => l.s), 'Until next time.']);
     adamAudio.speakSequence(
       INTRO.map((l) => ({ text: l.s, pauseAfter: l.pauseAfter })),
       { onLineStart: (i) => setIntroLine(i), onDone: () => setIntroDone(true) }

@@ -46,8 +46,8 @@ export default function AdamProtocol() {
 
   // deliberate exit via a button — say a soft farewell first
   const closeWithFarewell = useCallback(() => {
-    adamAudio.speak('Until next time.', { rate: 0.82, pitch: 0.9 });
-    setTimeout(() => close(), 900);
+    adamAudio.say('Until next time.');
+    setTimeout(() => close(), 1600);
   }, [close]);
 
   const activate = useCallback(() => {

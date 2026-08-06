@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Twitter, Linkedin, Instagram, ArrowUpRight } from 'lucide-react';
 import { FOOTER } from '@/constants/testIds';
@@ -37,6 +37,19 @@ const cols = [
 export default function Footer() {
   const location = useLocation();
   const navigate = useNavigate();
+  const adamClicks = useRef(0);
+  const adamTimer = useRef(null);
+
+  // Mobile easter-egg trigger: 11 taps on the copyright wordmark opens ADAM
+  const handleAdamTaps = () => {
+    adamClicks.current += 1;
+    clearTimeout(adamTimer.current);
+    adamTimer.current = setTimeout(() => { adamClicks.current = 0; }, 3000);
+    if (adamClicks.current >= 11) {
+      adamClicks.current = 0;
+      window.dispatchEvent(new Event('adam:open'));
+    }
+  };
 
   const handleClick = (e, href) => {
     if (href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('http')) return;
@@ -145,7 +158,11 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mt-12 pt-8 border-t border-[rgba(255,255,255,0.08)]">
-          <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#A0A0A0]">
+          <div
+            className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#A0A0A0] cursor-default select-none"
+            onClick={handleAdamTaps}
+            data-testid="footer-adam-trigger"
+          >
             © {new Date().getFullYear()} Adcom Media. All rights reserved.
           </div>
           <div className="flex items-center gap-3">

@@ -21,6 +21,9 @@ class AdamAudio {
     this.ambient = null; // { gain, oscs, lfo }
     this.muted = false;
     this._seqToken = 0;
+    this.voiceEnabled = null; // null = unknown, true/false once checked
+    this.clipCache = new Map();
+    this.currentAudio = null;
     try {
       this.muted = localStorage.getItem(MUTE_KEY) === '1';
     } catch (e) { /* ignore */ }
@@ -66,8 +69,14 @@ class AdamAudio {
       this.master.gain.setValueAtTime(Math.max(this.master.gain.value, 0.0001), t);
       this.master.gain.exponentialRampToValueAtTime(m ? 0.0001 : 1, t + 0.25);
     }
-    if (m && window.speechSynthesis) {
-      try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    if (m) {
+      // stop any voice immediately (Web Speech + ElevenLabs <audio>)
+      if (window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+      }
+      if (this.currentAudio) {
+        try { this.currentAudio.pause(); this.currentAudio.currentTime = 0; } catch (e) { /* ignore */ }
+      }
     }
   }
 
@@ -271,39 +280,105 @@ class AdamAudio {
     window.speechSynthesis.speak(u);
   }
 
+  // ---- premium ElevenLabs voice (with graceful Web Speech fallback) ----
+
+  async _checkVoice() {
+    if (this.voiceEnabled !== null) return this.voiceEnabled;
+    try {
+      const base = process.env.REACT_APP_BACKEND_URL;
+      const r = await fetch(`${base}/api/adam/voice/status`);
+      const j = await r.json();
+      this.voiceEnabled = !!j.enabled;
+    } catch (e) {
+      this.voiceEnabled = false;
+    }
+    return this.voiceEnabled;
+  }
+
+  async _fetchClip(text) {
+    if (this.clipCache.has(text)) return this.clipCache.get(text);
+    const base = process.env.REACT_APP_BACKEND_URL;
+    const r = await fetch(`${base}/api/adam/voice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    if (!r.ok) throw new Error('tts failed');
+    const j = await r.json();
+    this.clipCache.set(text, j.audio);
+    return j.audio;
+  }
+
+  /** Warm the ElevenLabs cache for a set of lines (parallel, best-effort). */
+  prefetch(texts) {
+    this._checkVoice().then((on) => {
+      if (!on) return;
+      texts.forEach((t) => this._fetchClip(t).catch(() => {}));
+    });
+  }
+
+  _webSpeak(text, done) {
+    if (this.muted || !window.speechSynthesis) {
+      const est = Math.max(650, text.replace(/\./g, '').length * 55);
+      setTimeout(done, est);
+      return;
+    }
+    let finished = false;
+    const finish = () => { if (!finished) { finished = true; done(); } };
+    this.speak(text, { onend: finish });
+    setTimeout(finish, Math.max(1600, text.length * 95) + 1500);
+  }
+
+  /** Speak one line; resolves when finished. Prefers ElevenLabs. */
+  say(text) {
+    return new Promise((resolve) => {
+      const run = async () => {
+        if (this.muted) {
+          setTimeout(resolve, Math.max(650, text.replace(/\./g, '').length * 55));
+          return;
+        }
+        const enabled = await this._checkVoice();
+        if (enabled) {
+          try {
+            const url = await this._fetchClip(text);
+            if (this.muted) { setTimeout(resolve, 300); return; }
+            const audio = new Audio(url);
+            audio.volume = 1;
+            this.currentAudio = audio;
+            let done = false;
+            const finish = () => { if (!done) { done = true; resolve(); } };
+            audio.onended = finish;
+            audio.onerror = () => this._webSpeak(text, finish);
+            audio.play().catch(() => this._webSpeak(text, finish));
+            // safety net
+            setTimeout(finish, Math.max(2500, text.length * 130) + 3000);
+            return;
+          } catch (e) { /* fall through */ }
+        }
+        this._webSpeak(text, resolve);
+      };
+      run();
+    });
+  }
+
   /** items: [{ text, pauseAfter }] spoken sequentially with pauses.
-   *  onLineStart(i) fires as each line begins so the UI can reveal text in
-   *  sync with the voice. Falls back to estimated timing when muted / no TTS. */
+   *  onLineStart(i) fires as each line begins so the UI reveals text in sync. */
   speakSequence(items, { onLineStart, onDone } = {}) {
     this._seqToken += 1;
     const token = this._seqToken;
     let i = 0;
-    const next = () => {
-      if (token !== this._seqToken) return; // cancelled / superseded
+    const step = async () => {
+      if (token !== this._seqToken) return;
       if (i >= items.length) { if (onDone) onDone(); return; }
       const it = items[i];
       const idx = i;
       i += 1;
       if (onLineStart) onLineStart(idx);
-
-      let advanced = false;
-      const advance = () => {
-        if (advanced || token !== this._seqToken) return;
-        advanced = true;
-        next();
-      };
-
-      if (this.muted || !window.speechSynthesis) {
-        const est = Math.max(650, it.text.replace(/\./g, '').length * 55);
-        setTimeout(advance, est + (it.pauseAfter || 400));
-        return;
-      }
-      this.speak(it.text, { onend: () => setTimeout(advance, it.pauseAfter || 400) });
-      // safety net so the sequence never stalls if onend doesn't fire
-      const maxWait = Math.max(1600, it.text.length * 95) + (it.pauseAfter || 400) + 1800;
-      setTimeout(advance, maxWait);
+      await this.say(it.text);
+      if (token !== this._seqToken) return;
+      setTimeout(() => step(), it.pauseAfter || 400);
     };
-    next();
+    step();
   }
 
   cancelSequence() {
@@ -314,6 +389,10 @@ class AdamAudio {
   cancelSpeech() {
     if (window.speechSynthesis) {
       try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    }
+    if (this.currentAudio) {
+      try { this.currentAudio.pause(); } catch (e) { /* ignore */ }
+      this.currentAudio = null;
     }
   }
 }

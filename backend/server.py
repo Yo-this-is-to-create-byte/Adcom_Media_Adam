@@ -4,6 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import asyncio
+import base64
 import logging
 import resend
 from pathlib import Path
@@ -26,6 +27,18 @@ SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 LEADS_INBOX = os.environ.get('LEADS_INBOX', 'hello.adcommedia@gmail.com')
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
+
+# ElevenLabs (ADAM Protocol voice) — optional, only if key configured
+ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY')
+ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'pNInz6obpgDQGcFmaJgB')
+_el_client = None
+_voice_cache = {}
+if ELEVENLABS_API_KEY:
+    try:
+        from elevenlabs.client import ElevenLabs
+        _el_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+    except Exception as _e:  # pragma: no cover
+        logging.getLogger(__name__).warning(f"ElevenLabs init failed: {_e}")
 
 app = FastAPI(title="Adcom Media API")
 api_router = APIRouter(prefix="/api")
@@ -198,6 +211,46 @@ async def list_contacts():
         if isinstance(it.get('created_at'), str):
             it['created_at'] = datetime.fromisoformat(it['created_at'])
     return items
+
+
+class VoiceRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=400)
+
+
+def _generate_voice(text: str) -> bytes:
+    from elevenlabs import VoiceSettings
+    audio = _el_client.text_to_speech.convert(
+        voice_id=ELEVENLABS_VOICE_ID,
+        model_id="eleven_multilingual_v2",
+        text=text,
+        output_format="mp3_44100_128",
+        voice_settings=VoiceSettings(
+            stability=0.55, similarity_boost=0.8, style=0.12, use_speaker_boost=True
+        ),
+    )
+    return b"".join(audio)
+
+
+@api_router.get("/adam/voice/status")
+async def adam_voice_status():
+    return {"enabled": bool(_el_client)}
+
+
+@api_router.post("/adam/voice")
+async def adam_voice(req: VoiceRequest):
+    if not _el_client:
+        raise HTTPException(status_code=503, detail="Voice engine not configured")
+    cache_key = f"{ELEVENLABS_VOICE_ID}:{req.text}"
+    if cache_key in _voice_cache:
+        return {"audio": _voice_cache[cache_key]}
+    try:
+        audio_bytes = await asyncio.to_thread(_generate_voice, req.text)
+        data_url = "data:audio/mpeg;base64," + base64.b64encode(audio_bytes).decode("utf-8")
+        _voice_cache[cache_key] = data_url
+        return {"audio": data_url}
+    except Exception as e:
+        logger.error(f"ElevenLabs TTS error: {e}")
+        raise HTTPException(status_code=502, detail="Voice generation failed")
 
 
 app.include_router(api_router)

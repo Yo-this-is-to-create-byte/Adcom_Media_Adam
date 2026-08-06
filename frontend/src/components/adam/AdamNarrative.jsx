@@ -1,29 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, ChevronDown, Sparkles, X, Check, Minus } from 'lucide-react';
-import Typewriter from './Typewriter';
 import adamAudio from './adamAudio';
+import { ShareButton } from './shareAdam';
 
-const INTRO_SPEECH = [
-  { text: 'Hello.', pauseAfter: 600 },
-  { text: "I'm ADAM.", pauseAfter: 700 },
-  { text: 'Artificial Decision and Marketing Intelligence.', pauseAfter: 900 },
-  { text: 'Built inside ADCOM.', pauseAfter: 1300 },
-  { text: "You weren't supposed to discover this.", pauseAfter: 2600 },
-  { text: 'But...', pauseAfter: 500 },
-  { text: "Since you're here...", pauseAfter: 600 },
-  { text: "I'll show you how we think.", pauseAfter: 400 },
-];
-
+// d = displayed text, s = spoken text, pauseAfter = gap before next line (ms)
 const INTRO = [
-  { t: 'HELLO.', big: true },
-  { t: "I'm ADAM." },
-  { t: 'Artificial Decision & Marketing Intelligence.', muted: true },
-  { t: 'Built inside ADCOM.' },
-  { t: "You weren't supposed to discover this.", accent: true },
-  { t: '...', muted: true },
-  { t: "Since you're here," },
-  { t: "I'll show you how we think.", accent: true },
+  { d: 'HELLO.', s: 'Hello.', big: true, pauseAfter: 600 },
+  { d: "I'm ADAM.", s: "I'm ADAM.", pauseAfter: 700 },
+  { d: 'Artificial Decision & Marketing Intelligence.', s: 'Artificial Decision and Marketing Intelligence.', muted: true, pauseAfter: 900 },
+  { d: 'Built inside ADCOM.', s: 'Built inside ADCOM.', pauseAfter: 1300 },
+  { d: "You weren't supposed to discover this.", s: "You weren't supposed to discover this.", accent: true, pauseAfter: 2600 },
+  { d: 'But...', s: 'But...', muted: true, pauseAfter: 500 },
+  { d: "Since you're here...", s: "Since you're here...", pauseAfter: 600 },
+  { d: "I'll show you how we think.", s: "I'll show you how we think.", accent: true, pauseAfter: 400 },
 ];
 
 const PHILOSOPHY = [
@@ -36,34 +26,27 @@ const PHILOSOPHY = [
 const TRAD = ['Monthly Reports', 'Generic Campaigns', 'Vanity Metrics', 'Reactive Execution', 'One-size-fits-all'];
 const ADCOM = ['Business Strategy', 'AI Systems', 'Automation', 'Performance', 'Long-term Growth'];
 
-/* ---- typed lines helper (types each line sequentially) ---- */
-function TypedLines({ lines, onDone }) {
-  const [idx, setIdx] = useState(0);
+/* ---- intro lines revealed in sync with ADAM's voice ---- */
+function SyncedIntro({ activeLine }) {
   return (
     <div className="space-y-3 md:space-y-4">
-      {lines.slice(0, idx + 1).map((l, i) => (
-        <div
-          key={i}
-          className={`${l.big ? 'font-display text-3xl md:text-5xl tracking-tight' : 'adam-mono text-base md:text-xl'} ${
-            l.accent ? 'text-[#D72638]' : l.muted ? 'text-white/40' : 'text-white/90'
-          }`}
-        >
-          {i === idx ? (
-            <Typewriter
-              text={l.t}
-              speed={l.big ? 55 : 24}
-              onDone={() =>
-                setTimeout(() => {
-                  if (idx < lines.length - 1) setIdx(idx + 1);
-                  else onDone && onDone();
-                }, l.t === '...' ? 700 : 260)
-              }
-            />
-          ) : (
-            l.t
-          )}
-        </div>
-      ))}
+      {INTRO.map((l, i) => {
+        if (i > activeLine) return null;
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className={`${l.big ? 'font-display text-3xl md:text-5xl tracking-tight' : 'adam-mono text-base md:text-xl'} ${
+              l.accent ? 'text-[#D72638]' : l.muted ? 'text-white/40' : 'text-white/90'
+            }`}
+          >
+            {l.d}
+            {i === activeLine && <span className="adam-caret text-[#D72638] ml-1">▊</span>}
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
@@ -93,6 +76,7 @@ const cardCls =
 export default function AdamNarrative({ onExplore, onExit, initialStep = 'intro' }) {
   const [step, setStep] = useState(initialStep); // intro -> philosophy -> competitive -> achievement -> choice
   const [introDone, setIntroDone] = useState(false);
+  const [introLine, setIntroLine] = useState(-1);
   const [scanned, setScanned] = useState(false);
 
   // competitive scan timer
@@ -110,17 +94,25 @@ export default function AdamNarrative({ onExplore, onExit, initialStep = 'intro'
     return () => clearTimeout(t);
   }, [step]);
 
-  // ---- audio cues per step ----
+  // ---- intro: speak lines and reveal text in sync with the voice ----
   useEffect(() => {
-    if (step === 'intro') {
-      adamAudio.speakSequence(INTRO_SPEECH);
-    } else {
-      adamAudio.cancelSpeech();
-      if (step === 'philosophy') {
-        PHILOSOPHY.forEach((_, i) => setTimeout(() => adamAudio.uiClick(), 250 + i * 500));
-      } else if (step === 'achievement') {
-        adamAudio.notification();
-      }
+    if (step !== 'intro') return undefined;
+    setIntroLine(-1);
+    setIntroDone(false);
+    adamAudio.speakSequence(
+      INTRO.map((l) => ({ text: l.s, pauseAfter: l.pauseAfter })),
+      { onLineStart: (i) => setIntroLine(i), onDone: () => setIntroDone(true) }
+    );
+    return () => adamAudio.cancelSequence();
+  }, [step]);
+
+  // ---- audio cues for other steps ----
+  useEffect(() => {
+    if (step === 'intro') return;
+    if (step === 'philosophy') {
+      PHILOSOPHY.forEach((_, i) => setTimeout(() => adamAudio.uiClick(), 250 + i * 500));
+    } else if (step === 'achievement') {
+      adamAudio.notification();
     }
   }, [step]);
 
@@ -142,7 +134,7 @@ export default function AdamNarrative({ onExplore, onExit, initialStep = 'intro'
         {/* STEP 4 */}
         {step === 'intro' && (
           <motion.div key="intro" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.6 }} className={cardCls} data-testid="adam-intro">
-            <TypedLines lines={INTRO} onDone={() => setIntroDone(true)} />
+            <SyncedIntro activeLine={introLine} />
             {introDone && <ContinueHint onClick={() => setStep('philosophy')} label="Show me" />}
           </motion.div>
         )}
@@ -249,6 +241,14 @@ export default function AdamNarrative({ onExplore, onExit, initialStep = 'intro'
                 <X size={15} className="opacity-60 group-hover:opacity-100" />
               </button>
             </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8"
+            >
+              <ShareButton label="Share that you found ADAM" />
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

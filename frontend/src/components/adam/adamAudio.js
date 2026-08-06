@@ -20,6 +20,7 @@ class AdamAudio {
     this.sfxBus = null;
     this.ambient = null; // { gain, oscs, lfo }
     this.muted = false;
+    this._seqToken = 0;
     try {
       this.muted = localStorage.getItem(MUTE_KEY) === '1';
     } catch (e) { /* ignore */ }
@@ -270,21 +271,44 @@ class AdamAudio {
     window.speechSynthesis.speak(u);
   }
 
-  /** items: [{ text, pauseAfter }] spoken sequentially with pauses. */
-  speakSequence(items, { onDone } = {}) {
-    if (this.muted || !window.speechSynthesis) {
-      if (onDone) setTimeout(onDone, 300);
-      return;
-    }
+  /** items: [{ text, pauseAfter }] spoken sequentially with pauses.
+   *  onLineStart(i) fires as each line begins so the UI can reveal text in
+   *  sync with the voice. Falls back to estimated timing when muted / no TTS. */
+  speakSequence(items, { onLineStart, onDone } = {}) {
+    this._seqToken += 1;
+    const token = this._seqToken;
     let i = 0;
     const next = () => {
-      if (this.muted) { if (onDone) onDone(); return; }
+      if (token !== this._seqToken) return; // cancelled / superseded
       if (i >= items.length) { if (onDone) onDone(); return; }
       const it = items[i];
+      const idx = i;
       i += 1;
-      this.speak(it.text, { onend: () => setTimeout(next, it.pauseAfter || 400) });
+      if (onLineStart) onLineStart(idx);
+
+      let advanced = false;
+      const advance = () => {
+        if (advanced || token !== this._seqToken) return;
+        advanced = true;
+        next();
+      };
+
+      if (this.muted || !window.speechSynthesis) {
+        const est = Math.max(650, it.text.replace(/\./g, '').length * 55);
+        setTimeout(advance, est + (it.pauseAfter || 400));
+        return;
+      }
+      this.speak(it.text, { onend: () => setTimeout(advance, it.pauseAfter || 400) });
+      // safety net so the sequence never stalls if onend doesn't fire
+      const maxWait = Math.max(1600, it.text.length * 95) + (it.pauseAfter || 400) + 1800;
+      setTimeout(advance, maxWait);
     };
     next();
+  }
+
+  cancelSequence() {
+    this._seqToken += 1;
+    this.cancelSpeech();
   }
 
   cancelSpeech() {

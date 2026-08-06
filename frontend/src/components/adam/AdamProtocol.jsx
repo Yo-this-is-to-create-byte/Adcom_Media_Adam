@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Volume2, VolumeX } from 'lucide-react';
 import useKonamiCode from '@/hooks/useKonamiCode';
 import adamAudio from './adamAudio';
+import { ShareButton } from './shareAdam';
 import AdamBackground from './AdamBackground';
 import AdamBoot from './AdamBoot';
 import AdamDashboard from './AdamDashboard';
@@ -62,7 +63,7 @@ export default function AdamProtocol() {
     document.body.style.overflow = 'hidden';
     document.body.classList.add('adam-nocursor');
     clearTimeout(finaleTimer.current);
-    finaleTimer.current = setTimeout(() => setShowFinale(true), 30000);
+    finaleTimer.current = setTimeout(() => setShowFinale(true), 200000);
   }, [active]);
 
   useKonamiCode(activate);
@@ -171,6 +172,9 @@ export default function AdamProtocol() {
               <span className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638] hidden sm:flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D72638] animate-pulse" /> ADAM Mode
               </span>
+              <div className="hidden sm:block">
+                <ShareButton label="Share" />
+              </div>
               <button
                 onClick={closeWithFarewell}
                 data-testid="adam-exit-explore"
@@ -232,6 +236,9 @@ export default function AdamProtocol() {
                     >
                       Keep exploring
                     </button>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 + FINALE.length * 0.5 + 0.9 }} className="mt-6">
+                    <ShareButton label="Share that you found ADAM" />
                   </motion.div>
                 </div>
               </motion.div>

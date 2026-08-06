@@ -9,6 +9,7 @@ import AdamBackground from './AdamBackground';
 import AdamBoot from './AdamBoot';
 import AdamDashboard from './AdamDashboard';
 import AdamNarrative from './AdamNarrative';
+import AdamWorkspace from './AdamWorkspace';
 
 const STORAGE_KEY = 'adcom_adam_unlocked';
 
@@ -157,13 +158,18 @@ export default function AdamProtocol() {
           {phase === 'boot' && <AdamBoot onComplete={onBootDone} />}
 
           {/* dashboard (also under narrative, dimmed) */}
-          {(phase === 'dashboard' || phase === 'narrative' || phase === 'explore') && (
+          {(phase === 'dashboard' || phase === 'narrative') && (
             <AdamDashboard dimmed={dimmed} />
           )}
 
           {/* narrative overlay */}
           {phase === 'narrative' && (
             <AdamNarrative onExplore={() => setPhase('explore')} onExit={close} />
+          )}
+
+          {/* explore: full AI Growth Intelligence workspace */}
+          {phase === 'explore' && (
+            <AdamWorkspace onExit={closeWithFarewell} />
           )}
 
           {/* explore mode controls */}

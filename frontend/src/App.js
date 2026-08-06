@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
@@ -33,6 +33,8 @@ import CaseStudyProchem from '@/pages/CaseStudyProchem';
 import CaseStudyProfotech from '@/pages/CaseStudyProfotech';
 import CaseStudyAusTyre from '@/pages/CaseStudyAusTyre';
 import CaseStudySkylarr from '@/pages/CaseStudySkylarr';
+import AdminPanel from '@/pages/admin/AdminPanel';
+import AdminAuthCallback from '@/pages/admin/AdminAuthCallback';
 
 function Landing() {
   return (
@@ -56,9 +58,15 @@ function Landing() {
   );
 }
 
-function App() {
+function AppRouter() {
+  // Detect Google OAuth callback synchronously from the URL fragment
+  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+  const location = useLocation();
+  if (location.hash && location.hash.includes('session_id=')) {
+    return <AdminAuthCallback />;
+  }
   return (
-    <BrowserRouter>
+    <>
       <WhatsAppButton />
       <AdamProtocol />
       <AdamBadge />
@@ -80,7 +88,16 @@ function App() {
         <Route path="/case-studies/profotech" element={<CaseStudyProfotech />} />
         <Route path="/case-studies/aus-tyre" element={<CaseStudyAusTyre />} />
         <Route path="/case-studies/skylarr" element={<CaseStudySkylarr />} />
+        <Route path="/adcom-admin" element={<AdminPanel />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRouter />
     </BrowserRouter>
   );
 }

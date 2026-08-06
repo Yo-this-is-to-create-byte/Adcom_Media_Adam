@@ -1,17 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import Contact from '@/components/Contact';
 import { BlogEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
-import { getPostBySlug, posts } from './blogPosts';
+import { apiGet } from '@/lib/api';
 
 function renderParagraph(line, i) {
-  // Treat ## as section heading
   if (line.startsWith('## ')) {
     return (
       <h2 key={i} className="font-display text-[28px] md:text-[36px] lg:text-[40px] leading-tight tracking-tight mt-12 mb-4">
@@ -19,7 +17,6 @@ function renderParagraph(line, i) {
       </h2>
     );
   }
-  // Inline bold **text**
   const parts = line.split(/(\*\*[^*]+\*\*)/g).map((p, j) =>
     /^\*\*[^*]+\*\*$/.test(p)
       ? <strong key={j} className="text-white font-semibold">{p.slice(2, -2)}</strong>
@@ -32,20 +29,53 @@ function renderParagraph(line, i) {
   );
 }
 
+function normalize(p) {
+  return { ...p, readTime: p.read_time || p.readTime };
+}
+
 export default function BlogPost() {
   const { slug } = useParams();
-  const post = getPostBySlug(slug);
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [slug]);
-  if (!post) return <Navigate to="/blog" replace />;
+  const [post, setPost] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [status, setStatus] = useState('loading'); // loading | ok | notfound
 
-  const related = posts.filter((p) => p.slug !== post.slug).slice(0, 2);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    let live = true;
+    (async () => {
+      try {
+        const [p, all] = await Promise.all([
+          apiGet(`/blogs/${slug}`),
+          apiGet('/blogs'),
+        ]);
+        if (!live) return;
+        setPost(normalize(p));
+        setRelated(all.filter((x) => x.slug !== p.slug).slice(0, 2).map(normalize));
+        setStatus('ok');
+      } catch {
+        if (!live) return;
+        setStatus('notfound');
+      }
+    })();
+    return () => { live = false; };
+  }, [slug]);
+
+  if (status === 'notfound') return <Navigate to="/blog" replace />;
+  if (status === 'loading' || !post) {
+    return (
+      <div className="App noise relative min-h-screen bg-black">
+        <CustomCursor />
+        <Header />
+        <div className="pt-40 text-center text-white/40 text-sm">Loading essay…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="App noise relative">
       <CustomCursor />
       <Header />
       <main>
-        {/* HERO */}
         <article>
           <header className="relative pt-32 pb-12 md:pt-40 md:pb-16">
             <div className="orb bg-[#E11D2E] w-[500px] h-[500px] -top-40 -right-40 opacity-25" />
@@ -76,7 +106,6 @@ export default function BlogPost() {
             </div>
           </header>
 
-          {/* COVER */}
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -89,18 +118,17 @@ export default function BlogPost() {
             </motion.div>
           </div>
 
-          {/* BODY */}
           <div className="relative py-16 md:py-24">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-[19px] md:text-[21px] leading-[1.5] tracking-tight text-white/95 mb-10 font-display">
                 {post.excerpt}
               </div>
-              {post.body.map(renderParagraph)}
+              {(post.body || []).map(renderParagraph)}
             </div>
           </div>
         </article>
 
-        {/* RELATED */}
+        {related.length > 0 && (
         <section className="relative py-16 md:py-24 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0] mb-10 flex items-center gap-3">
@@ -132,6 +160,7 @@ export default function BlogPost() {
             </div>
           </div>
         </section>
+        )}
 
         <BlogEnquiry />
         <FAQ />

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowLeft } from 'lucide-react';
@@ -8,10 +8,19 @@ import Contact from '@/components/Contact';
 import { BlogEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
-import { posts } from './blogPosts';
+import { apiGet } from '@/lib/api';
 
 export default function Blog() {
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    apiGet('/blogs').then((d) => {
+      // API returns read_time (snake); components use readTime
+      setPosts(d.map((p) => ({ ...p, readTime: p.read_time || p.readTime })));
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
   const [feature, ...rest] = posts;
 
   return (
@@ -42,6 +51,12 @@ export default function Blog() {
         </section>
 
         {/* FEATURED POST */}
+        {loading && (
+          <section className="relative pb-12 md:pb-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white/40 text-sm">Loading essays…</div>
+          </section>
+        )}
+        {!loading && feature && (
         <section className="relative pb-12 md:pb-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link to={`/blog/${feature.slug}`} data-testid={`blog-card-${feature.slug}`} className="group block">
@@ -81,8 +96,10 @@ export default function Blog() {
             </Link>
           </div>
         </section>
+        )}
 
         {/* MORE POSTS */}
+        {!loading && rest.length > 0 && (
         <section className="relative py-12 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#A0A0A0] mb-10 flex items-center gap-3">
@@ -130,6 +147,7 @@ export default function Blog() {
             </div>
           </div>
         </section>
+        )}
 
         <BlogEnquiry />
         <FAQ />

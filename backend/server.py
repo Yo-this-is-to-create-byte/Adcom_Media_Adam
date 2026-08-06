@@ -13,6 +13,10 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 
+from auth import build_auth_router
+from blogs import build_blog_router, seed_blogs_if_empty
+from adam_intel import build_adam_router
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -255,6 +259,12 @@ async def adam_voice(req: VoiceRequest):
 
 app.include_router(api_router)
 
+# Auth (Emergent Google OAuth) + Blog CMS + ADAM Intelligence
+_auth_router, _get_current_user, _require_admin = build_auth_router(db)
+app.include_router(_auth_router)
+app.include_router(build_blog_router(db, _require_admin))
+app.include_router(build_adam_router())
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -262,6 +272,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def on_startup():
+    try:
+        await seed_blogs_if_empty(db)
+    except Exception:
+        logger.exception("Blog seeding failed")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

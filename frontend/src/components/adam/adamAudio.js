@@ -346,7 +346,12 @@ class AdamAudio {
             audio.volume = 1;
             this.currentAudio = audio;
             let done = false;
-            const finish = () => { if (!done) { done = true; resolve(); } };
+            const finish = () => {
+              if (done) return;
+              done = true;
+              if (this.currentAudio === audio) this.currentAudio = null;
+              resolve();
+            };
             audio.onended = finish;
             audio.onerror = () => this._webSpeak(text, finish);
             audio.play().catch(() => this._webSpeak(text, finish));

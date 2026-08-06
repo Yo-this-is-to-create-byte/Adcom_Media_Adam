@@ -156,6 +156,24 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        {/* Mobile-only ADAM activation button — discreet, on-brand */}
+        <div className="md:hidden flex justify-center mt-10">
+          <button
+            type="button"
+            data-testid="footer-adam-mobile-activate"
+            onClick={() => window.dispatchEvent(new Event('adam:open'))}
+            className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-[rgba(255,255,255,0.14)] bg-white/[0.02] backdrop-blur-sm active:scale-[0.97] transition-transform"
+          >
+            <span className="relative flex items-center justify-center w-2 h-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#F43F5E] opacity-70 animate-ping" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#E11D2E]" />
+            </span>
+            <span className="text-[10px] font-mono uppercase tracking-[0.35em] text-white/70 group-active:text-white">
+              Activate ADAM
+            </span>
+          </button>
+        </div>
+
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mt-12 pt-8 border-t border-[rgba(255,255,255,0.08)]">
           <div

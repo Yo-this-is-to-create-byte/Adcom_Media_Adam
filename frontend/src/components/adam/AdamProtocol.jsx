@@ -144,7 +144,8 @@ export default function AdamProtocol() {
         >
           <AdamBackground />
 
-          {/* mute / unmute toggle */}
+          {/* mute / unmute toggle — hidden in explore (workspace has its own controls) */}
+          {phase !== 'explore' && (
           <button
             onClick={toggleMute}
             data-testid="adam-mute-toggle"
@@ -153,6 +154,7 @@ export default function AdamProtocol() {
           >
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
+          )}
 
           {/* boot */}
           {phase === 'boot' && <AdamBoot onComplete={onBootDone} />}
@@ -172,27 +174,10 @@ export default function AdamProtocol() {
             <AdamWorkspace onExit={closeWithFarewell} />
           )}
 
-          {/* explore mode controls */}
-          {phase === 'explore' && (
-            <div className="absolute top-4 right-4 md:top-6 md:right-8 z-40 flex items-center gap-4">
-              <span className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638] hidden sm:flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#D72638] animate-pulse" /> ADAM Mode
-              </span>
-              <div className="hidden sm:block">
-                <ShareButton label="Share" />
-              </div>
-              <button
-                onClick={closeWithFarewell}
-                data-testid="adam-exit-explore"
-                className="adam-mono text-[11px] uppercase tracking-[0.2em] px-4 py-2 rounded-full border border-white/15 text-white/80 hover:bg-white hover:text-black transition-colors"
-              >
-                Return to Website
-              </button>
-            </div>
-          )}
+          {/* explore mode: workspace provides its own controls — no duplicate top-right nav */}
 
           {/* persistent ESC hint */}
-          {(phase === 'dashboard' || phase === 'explore') && (
+          {phase === 'dashboard' && (
             <div className="absolute bottom-14 right-4 md:right-8 adam-mono text-[9px] uppercase tracking-[0.28em] text-white/25">
               Press ESC to exit
             </div>

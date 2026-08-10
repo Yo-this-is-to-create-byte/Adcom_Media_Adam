@@ -1,40 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Send, Sparkles, ChevronRight, Loader2, FileText, Check } from 'lucide-react';
+import {
+  Send, Loader2, Sparkles, Check, ArrowUpRight,
+  Globe, X, ChevronRight, FileText, Mail, Compass,
+} from 'lucide-react';
 import Markdown from '@/components/Markdown';
-import { apiGet, apiPost, streamChat } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 
-const MODES = [
-  { id: 'strategy', label: 'Strategy', accent: 'Full-spectrum CMO' },
-  { id: 'seo', label: 'AI SEO', accent: 'Citation & entity' },
-  { id: 'growth', label: 'Growth', accent: 'Channels & LTV' },
-  { id: 'brand', label: 'Brand', accent: 'Positioning' },
+// ---------- constants ---------- //
+const OPENING_LINE =
+  "Let's start simple. What are you trying to achieve right now?";
+const OPENING_CHIPS = [
+  'More Leads', 'More Sales', 'Better Branding', 'Better Website',
+  'Better SEO', 'Better Ads', 'Launch Something New', 'Something Else',
+];
+const DEEP_ACTIONS = [
+  { id: 'roadmap', label: 'Build my 90-day roadmap', icon: FileText },
+  { id: 'audit', label: 'Deep website audit', icon: Globe },
+  { id: 'chat', label: 'Improve my marketing', icon: Sparkles },
+  { id: 'talk', label: 'Talk to ADCOM', icon: Mail, accent: true },
+  { id: 'done', label: "I'm done", icon: Check, muted: true },
 ];
 
-const SUGGESTIONS = {
-  strategy: [
-    'What are the 3 biggest strategic risks you see for us right now?',
-    'If you were our CMO for 90 days, what would you fix first?',
-    'What positioning move would compound over 24 months?',
-  ],
-  seo: [
-    'Audit our top 3 AI SEO gaps against category leaders.',
-    'What schema and entity signals should we add today?',
-    'Which topics should we own to earn LLM citations?',
-  ],
-  growth: [
-    'Diagnose our growth model, not just our channels.',
-    'How would you improve CAC:LTV in the next 90 days?',
-    'Where does creative iteration have the biggest lift?',
-  ],
-  brand: [
-    'How strong is our category ownership from the site alone?',
-    'Rewrite our positioning in one sentence a founder would use.',
-    'What voice would give us more pricing power?',
-  ],
-};
-
-function makeSessionId() {
+function newSessionId() {
   return 'adam_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
 }
 
@@ -53,386 +41,569 @@ function siteContextSummary(scan) {
   ].join('\n');
 }
 
-function ChatBubble({ msg, streaming }) {
-  const isUser = msg.role === 'user';
+// ---------- typewriter ---------- //
+function useTypewriter(text, speedMs = 14) {
+  const [out, setOut] = useState('');
+  useEffect(() => {
+    setOut('');
+    if (!text) return undefined;
+    let i = 0;
+    const t = setInterval(() => {
+      i += 1;
+      setOut(text.slice(0, i));
+      if (i >= text.length) clearInterval(t);
+    }, speedMs);
+    return () => clearInterval(t);
+  }, [text, speedMs]);
+  return out;
+}
+
+function AssistantBubble({ text, isLatest }) {
+  const shown = useTypewriter(isLatest ? text : text, isLatest ? 14 : 0);
+  const finalText = isLatest ? shown : text;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-    >
-      <div
-        className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-5 py-4 ${
-          isUser
-            ? 'bg-[#E11D2E] text-white rounded-tr-sm'
-            : 'bg-white/[0.04] border border-white/10 rounded-tl-sm text-white/95'
-        }`}
-        data-testid={`adam-chat-msg-${msg.role}`}
-      >
-        {isUser ? (
-          <div className="whitespace-pre-wrap leading-[1.55]">{msg.text}</div>
-        ) : (
-          <>
-            <Markdown text={msg.text || '…'} />
-            {streaming && (
-              <span className="inline-block ml-1 w-[2px] h-[16px] align-middle bg-[#F43F5E] animate-pulse" />
-            )}
-          </>
+    <div className="flex items-start gap-3" data-testid="adam-chat-msg-assistant">
+      <div className="w-8 h-8 rounded-full border border-[#D72638]/40 bg-[#D72638]/15 shrink-0 flex items-center justify-center mt-1">
+        <Sparkles size={13} className="text-[#D72638]" />
+      </div>
+      <div className="max-w-[85%] md:max-w-[80%] rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/10 px-5 py-3 text-white/95 leading-[1.55] text-[15px]">
+        {finalText}
+        {isLatest && shown.length < text.length && (
+          <span className="inline-block ml-1 w-[2px] h-[16px] align-middle bg-[#F43F5E] animate-pulse" />
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
+function UserBubble({ text }) {
+  return (
+    <div className="flex justify-end" data-testid="adam-chat-msg-user">
+      <div className="max-w-[85%] md:max-w-[70%] rounded-2xl rounded-tr-sm bg-[#E11D2E] px-5 py-3 text-white text-[15px] leading-[1.5] whitespace-pre-wrap">
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-start gap-3" data-testid="adam-typing">
+      <div className="w-8 h-8 rounded-full border border-[#D72638]/40 bg-[#D72638]/15 shrink-0 flex items-center justify-center mt-1">
+        <Sparkles size={13} className="text-[#D72638]" />
+      </div>
+      <div className="rounded-2xl rounded-tl-sm bg-white/[0.04] border border-white/10 px-4 py-3 inline-flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-white/60"
+            animate={{ opacity: [0.25, 1, 0.25] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Chip({ children, onClick, testid, active = false, muted = false, accent = false, disabled = false }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      data-testid={testid}
+      className={`text-left text-[13px] px-4 py-2.5 rounded-full border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+        accent
+          ? 'border-[#D72638] bg-[#D72638] text-white hover:bg-[#ff2f45]'
+          : active
+            ? 'border-[#D72638] bg-[#D72638]/10 text-white'
+            : muted
+              ? 'border-white/10 text-white/45 hover:text-white/80'
+              : 'border-white/15 text-white/85 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/25'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ---------- Summary Cards ---------- //
+function SummaryCards({ summary }) {
+  const biz = summary?.business || {};
+  const web = summary?.website;
+  return (
+    <div className="space-y-4" data-testid="adam-summary">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="rounded-2xl border border-[#D72638]/30 bg-black/50 p-6 backdrop-blur-md"
+      >
+        <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638] mb-4">Business snapshot</div>
+        <dl className="grid gap-4">
+          <SummaryRow label="Business" value={biz.business} />
+          <SummaryRow label="Primary goal" value={biz.primary_goal} />
+          <SummaryRow label="Current challenge" value={biz.current_challenge} />
+          <SummaryRow label="Opportunity" value={biz.opportunity} accent />
+        </dl>
+      </motion.div>
+      {web && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md"
+          data-testid="adam-summary-website"
+        >
+          <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-white/50 mb-4 flex items-center gap-2">
+            <Globe size={12} /> Website snapshot
+          </div>
+          <dl className="grid gap-4">
+            <SummaryRow label="What's working" value={web.whats_working} />
+            <SummaryRow label="Needs attention" value={web.needs_attention} />
+            <SummaryRow label="Biggest opportunity" value={web.biggest_opportunity} />
+            <SummaryRow label="Quick win" value={web.quick_win} accent />
+          </dl>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+function SummaryRow({ label, value, accent = false }) {
+  return (
+    <div>
+      <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-white/45 mb-1.5">{label}</div>
+      <div className={`text-[15px] leading-[1.55] ${accent ? 'text-white font-medium' : 'text-white/90'}`}>{value || '—'}</div>
+    </div>
+  );
+}
+
+// ---------- Main Workspace ---------- //
 export default function AdamWorkspace({ onExit }) {
-  const [url, setUrl] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const [scan, setScan] = useState(null);
-  const [scanErr, setScanErr] = useState('');
-  const [mode, setMode] = useState('strategy');
+  // messages: { role: 'user'|'assistant', text }
   const [messages, setMessages] = useState([]);
+  const [profile, setProfile] = useState({});
+  const [suggestions, setSuggestions] = useState(OPENING_CHIPS);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [engineReady, setEngineReady] = useState(true);
+  const [phase, setPhase] = useState('greet'); // greet → discover → offer_website → scan → summary → deep_menu → roadmap → handover_open → done
+  const [scan, setScan] = useState(null);
+  const [scanErr, setScanErr] = useState('');
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [roadmap, setRoadmap] = useState('');
-  const [buildingRoadmap, setBuildingRoadmap] = useState(false);
-  const [showLead, setShowLead] = useState(false);
-  const [lead, setLead] = useState({ name: '', email: '', message: '' });
-  const [leadSent, setLeadSent] = useState(false);
-  const [leadErr, setLeadErr] = useState('');
+  const [roadmapLoading, setRoadmapLoading] = useState(false);
+  const [engineReady, setEngineReady] = useState(true);
+  const [urlValue, setUrlValue] = useState('');
+  const [showHandover, setShowHandover] = useState(false);
+  const [handoverSent, setHandoverSent] = useState(false);
+  const [handoverErr, setHandoverErr] = useState('');
+
+  const sessionIdRef = useRef(newSessionId());
   const scrollRef = useRef(null);
-  const sessionIdRef = useRef(makeSessionId());
-  const abortRef = useRef(null);
+  const turnCountRef = useRef(0);
 
   useEffect(() => {
     apiGet('/adam/status').then((s) => setEngineReady(!!s.llm_enabled)).catch(() => setEngineReady(false));
+    // seed opening line into the transcript
+    setMessages([{ role: 'assistant', text: OPENING_LINE }]);
   }, []);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, roadmap, buildingRoadmap]);
+  }, [messages, phase, summaryLoading, roadmapLoading, scan]);
 
-  // If URL changes, reset session so the AI has fresh context
-  const runScan = useCallback(async () => {
-    if (!url.trim()) return;
-    setScanning(true); setScanErr(''); setScan(null); setMessages([]); setRoadmap('');
-    sessionIdRef.current = makeSessionId();
-    let target = url.trim();
+  // ---------- Send a user message through /adam/discover ---------- //
+  const sendTurn = useCallback(async (text) => {
+    const clean = (text || '').trim();
+    if (!clean || busy) return;
+    setInput('');
+    setSuggestions([]);
+    // optimistic user bubble
+    setMessages((m) => [...m, { role: 'user', text: clean }]);
+    setBusy(true);
+    turnCountRef.current += 1;
+
+    try {
+      const priorTranscript = messages.map((m) => ({ role: m.role, text: m.text }));
+      const res = await apiPost('/adam/discover', {
+        session_id: sessionIdRef.current,
+        message: clean,
+        profile,
+        transcript: priorTranscript,
+      });
+
+      const nextProfile = { ...profile, ...(res.extracted || {}) };
+      setProfile(nextProfile);
+      setMessages((m) => [...m, { role: 'assistant', text: res.reply || '…' }]);
+      setSuggestions(res.suggestions || []);
+
+      // Offer website prompt after 3+ turns if we don't already have it, once, then let LLM pace naturally
+      const substantiveFields = Object.values(nextProfile).filter(Boolean).length;
+      if (res.ready_for_summary || substantiveFields >= 5) {
+        // ask about website once
+        if (!nextProfile.website && phase === 'greet') {
+          setPhase('offer_website');
+        } else if (phase !== 'summary') {
+          // move to summary directly if we already have website (or the user skipped earlier)
+          setPhase('offer_website');
+        }
+      } else if (phase === 'greet') {
+        setPhase('discover');
+      }
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', text: `Something interrupted my train of thought. ${e.message ? '(' + e.message + ')' : ''} Try again?` }]);
+    } finally {
+      setBusy(false);
+    }
+  }, [messages, profile, busy, phase]);
+
+  // ---------- Website scan ---------- //
+  const runScan = useCallback(async (rawUrl) => {
+    let target = (rawUrl || urlValue).trim();
+    if (!target) return;
     if (!/^https?:\/\//i.test(target)) target = `https://${target}`;
+    setPhase('scanning');
+    setScanErr('');
+    setMessages((m) => [...m, { role: 'user', text: `Scan ${target}` }]);
     try {
       const s = await apiPost('/adam/scrape', { url: target });
       setScan(s);
+      setProfile((p) => ({ ...p, website: s.url }));
+      setMessages((m) => [...m, { role: 'assistant', text: `Site read. I have a picture of ${s.title || 'your brand'}. Give me a moment — putting the whole thing together.` }]);
+      // proceed straight to summary
+      generateSummary(s);
     } catch (e) {
-      setScanErr(e.message || 'Could not scan that site');
-    } finally { setScanning(false); }
-  }, [url]);
-
-  const sendMessage = useCallback(async (text) => {
-    const clean = (text ?? input).trim();
-    if (!clean || busy) return;
-    setInput('');
-    const userMsg = { role: 'user', text: clean };
-    const asstMsg = { role: 'assistant', text: '' };
-    setMessages((m) => [...m, userMsg, asstMsg]);
-    setBusy(true);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-    try {
-      const stream = streamChat({
-        session_id: sessionIdRef.current,
-        mode,
-        message: clean,
-        site_context: siteContextSummary(scan),
-      }, controller.signal);
-      for await (const chunk of stream) {
-        setMessages((m) => {
-          const copy = [...m];
-          const last = copy[copy.length - 1];
-          if (last && last.role === 'assistant') {
-            copy[copy.length - 1] = { ...last, text: (last.text || '') + (last.text ? '\n' : '') + chunk };
-          }
-          return copy;
-        });
-      }
-    } catch (e) {
-      setMessages((m) => {
-        const copy = [...m];
-        const last = copy[copy.length - 1];
-        if (last && last.role === 'assistant') {
-          copy[copy.length - 1] = { ...last, text: (last.text || '') + `\n\n_Stream ended: ${e.message || 'error'}_` };
-        }
-        return copy;
-      });
-    } finally {
-      setBusy(false);
-      abortRef.current = null;
+      setScanErr(e.message || 'Could not reach that URL');
+      setMessages((m) => [...m, { role: 'assistant', text: `I couldn't reach that URL — happens sometimes. We can continue without it.` }]);
+      setPhase('offer_website');
     }
-  }, [input, busy, mode, scan]);
+  }, [urlValue]);
 
-  const generateRoadmap = useCallback(async () => {
-    if (buildingRoadmap) return;
-    setBuildingRoadmap(true); setRoadmap('');
+  const skipWebsite = useCallback(() => {
+    setMessages((m) => [...m, { role: 'user', text: 'Continue without website' }, { role: 'assistant', text: `No problem. I can still give you a direction from what you've told me — one moment.` }]);
+    generateSummary(null);
+  }, []);
+
+  // ---------- Summary generation ---------- //
+  const generateSummary = useCallback(async (siteScanArg) => {
+    setSummaryLoading(true);
+    setPhase('summary');
     try {
-      const goal = messages.filter((m) => m.role === 'user').slice(-3).map((m) => m.text).join(' | ') || 'Grow contribution profit and category authority over the next 90 days.';
+      const s = await apiPost('/adam/summary', {
+        session_id: sessionIdRef.current,
+        profile,
+        site_context: siteScanArg ? siteContextSummary(siteScanArg) : (scan ? siteContextSummary(scan) : null),
+      });
+      setSummary(s);
+      setPhase('deep_menu');
+      setMessages((m) => [...m, { role: 'assistant', text: `Perfect. I have what I need. Here's what I'm seeing.` }]);
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', text: `I couldn't compose the snapshot just now. ${e.message ? '(' + e.message + ')' : ''}` }]);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [profile, scan]);
+
+  // ---------- 90-day Roadmap ---------- //
+  const generateRoadmap = useCallback(async () => {
+    if (roadmapLoading) return;
+    setRoadmapLoading(true);
+    setPhase('roadmap');
+    // Update status
+    try { await apiPost('/adam/lead/upsert', { session_id: sessionIdRef.current, profile, transcript: messages, status: 'ANALYSIS_STARTED' }); } catch (_) { /* ignore */ }
+    try {
+      const goal = profile.goal || 'Build a stronger growth model over the next 90 days.';
       const r = await apiPost('/adam/roadmap', {
         session_id: sessionIdRef.current,
-        site_context: siteContextSummary(scan),
-        goal,
+        site_context: scan ? siteContextSummary(scan) : null,
+        goal: `${goal}. Business: ${profile.business_type || profile.industry || 'unspecified'}. Audience: ${profile.audience || 'unspecified'}. Pain points: ${profile.pain_points || 'unspecified'}. Current marketing: ${profile.marketing_channels || 'unspecified'}.`,
       });
       setRoadmap(r.markdown || '');
     } catch (e) {
       setRoadmap(`### Roadmap unavailable\n${e.message || 'Please try again in a moment.'}`);
-    } finally { setBuildingRoadmap(false); }
-  }, [buildingRoadmap, messages, scan]);
-
-  const downloadRoadmap = () => {
-    const blob = new Blob([`# 90-day Roadmap for ${scan?.title || url}\n\nGenerated by ADAM · Adcom Media\n\n${roadmap}`], { type: 'text/markdown' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `adam-roadmap-${(scan?.url || 'website').replace(/[^a-z0-9]+/gi, '-').slice(0, 40)}.md`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  const submitLead = async () => {
-    setLeadErr('');
-    if (!lead.email || !lead.name) { setLeadErr('Name and email required.'); return; }
-    try {
-      await apiPost('/contact', {
-        name: lead.name,
-        email: lead.email,
-        website: scan?.url || url || '',
-        message: `[ADAM lead · ${mode.toUpperCase()} session]\n\n${lead.message || 'Interested in a strategy call.'}\n\nSession id: ${sessionIdRef.current}\nSite scanned: ${scan?.url || url || 'n/a'}\nLast question: ${messages.filter(m => m.role === 'user').slice(-1)[0]?.text || 'n/a'}`,
-        source: 'adam-workspace',
-      });
-      setLeadSent(true);
-    } catch (e) {
-      setLeadErr(e.message || 'Could not send. Try again.');
+    } finally {
+      setRoadmapLoading(false);
     }
-  };
+  }, [profile, scan, messages, roadmapLoading]);
 
-  const suggestions = SUGGESTIONS[mode] || [];
-  const hasChat = messages.length > 0;
+  // ---------- Deep menu action ---------- //
+  const onDeepAction = useCallback(async (id) => {
+    if (id === 'roadmap') { generateRoadmap(); return; }
+    if (id === 'audit') {
+      if (!scan) {
+        setPhase('offer_website');
+        setMessages((m) => [...m, { role: 'assistant', text: `I'll need your website URL for the deep audit — drop it below.` }]);
+        return;
+      }
+      // continue the conversation in "audit" mode via /discover
+      setPhase('discover');
+      sendTurn('Give me a deeper audit of my website — go into technical SEO, positioning, conversion.');
+      return;
+    }
+    if (id === 'chat') {
+      setPhase('discover');
+      sendTurn('How would you improve my marketing operating model? Diagnose the model, not the channels.');
+      return;
+    }
+    if (id === 'talk') { setShowHandover(true); return; }
+    if (id === 'done') {
+      setPhase('done');
+      setMessages((m) => [...m, { role: 'assistant', text: `Great. Nothing to sign, nothing to submit — take what's useful. If anything I said resonates, you know where to find us.` }]);
+    }
+  }, [scan, generateRoadmap, sendTurn]);
+
+  // ---------- Handover ---------- //
+  const submitHandover = useCallback(async () => {
+    setHandoverErr('');
+    if (!profile.email && !profile.phone) { setHandoverErr('Add an email or phone so the studio can reply.'); return; }
+    try {
+      await apiPost('/adam/handover', {
+        session_id: sessionIdRef.current,
+        profile,
+        transcript: messages,
+        summary,
+        roadmap_markdown: roadmap || null,
+        site_context: scan ? siteContextSummary(scan) : null,
+      });
+      setHandoverSent(true);
+    } catch (e) {
+      setHandoverErr(e.message || 'Could not send. Try again.');
+    }
+  }, [profile, messages, summary, roadmap, scan]);
+
+  // ---------- UI helpers ---------- //
+  const showComposer = ['greet', 'discover', 'summary', 'deep_menu', 'roadmap', 'done'].includes(phase);
+  const disabledInput = busy || summaryLoading || roadmapLoading || phase === 'scanning';
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-black/60 backdrop-blur-xl" data-testid="adam-workspace">
+    <div className="absolute inset-0 z-30 flex flex-col bg-black/70 backdrop-blur-2xl" data-testid="adam-workspace">
       {/* Header */}
-      <div className="shrink-0 px-4 md:px-8 pt-4 md:pt-6 pb-3 border-b border-white/10 flex items-center gap-4 flex-wrap">
+      <div className="shrink-0 px-4 md:px-8 pt-4 md:pt-5 pb-3 border-b border-white/10 flex items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full border border-[#D72638]/40 bg-[#D72638]/15 flex items-center justify-center">
             <Sparkles size={14} className="text-[#D72638]" />
           </div>
           <div>
-            <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638]">ADAM · Live</div>
-            <div className="text-sm text-white/85 font-medium">Growth Intelligence Workspace</div>
+            <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638] flex items-center gap-1.5">
+              ADAM · Live
+              <span className="w-1 h-1 rounded-full bg-[#D72638] animate-pulse" />
+            </div>
+            <div className="text-sm text-white/85 font-medium">Growth Consultant</div>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              data-testid={`adam-mode-${m.id}`}
-              onClick={() => setMode(m.id)}
-              className={`adam-mono text-[10px] uppercase tracking-[0.22em] px-3 py-1.5 rounded-full border transition-colors ${mode === m.id ? 'border-[#D72638] text-white bg-[#D72638]/15' : 'border-white/10 text-white/50 hover:text-white/85'}`}
-              title={m.accent}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        <button
+          onClick={onExit}
+          data-testid="adam-workspace-exit"
+          className="ml-auto adam-mono text-[10px] uppercase tracking-[0.24em] text-white/50 hover:text-white flex items-center gap-2"
+        >
+          Return to site <X size={12} />
+        </button>
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 grid lg:grid-cols-12 gap-0">
-        {/* Left rail — URL + scan summary */}
-        <aside className="lg:col-span-4 border-r border-white/10 flex flex-col min-h-0">
-          <div className="p-5 md:p-6">
-            <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-white/40 mb-3">Analyse a website</div>
-            <div className="relative">
-              <input
-                data-testid="adam-url-input"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && runScan()}
-                placeholder="your-brand.com"
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm placeholder:text-white/30"
-              />
-              <Search size={15} className="absolute top-1/2 -translate-y-1/2 left-4 text-white/40" />
-            </div>
-            <button
-              data-testid="adam-scan-btn"
-              onClick={runScan}
-              disabled={!url.trim() || scanning}
-              className="mt-3 w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#D72638] text-white text-sm font-semibold hover:bg-[#ff2f45] disabled:opacity-40 disabled:cursor-not-allowed"
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {messages.map((m, i) => {
+            const isLatest = i === messages.length - 1;
+            if (m.role === 'assistant') return <AssistantBubble key={i} text={m.text} isLatest={isLatest && !busy && !summaryLoading} />;
+            return <UserBubble key={i} text={m.text} />;
+          })}
+
+          {busy && <TypingIndicator />}
+
+          {/* Website offer */}
+          {phase === 'offer_website' && !busy && !summaryLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5" data-testid="adam-offer-website"
             >
-              {scanning ? <><Loader2 size={14} className="animate-spin" /> Scanning</> : <>Scan site <ChevronRight size={14} /></>}
-            </button>
-            {scanErr && <div className="mt-3 text-xs text-[#F43F5E]">{scanErr}</div>}
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-y-auto px-5 md:px-6 pb-6">
-            {scan ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5" data-testid="adam-scan-card">
-                <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638] mb-3 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#D72638] animate-pulse" /> Brand profile
-                </div>
-                <div className="font-display text-lg leading-tight tracking-tight mb-1">{scan.title || '(no title)'}</div>
-                <div className="text-xs text-white/50 break-all mb-4">{scan.url}</div>
-                {scan.description && <div className="text-sm text-white/70 leading-relaxed mb-4">{scan.description}</div>}
-                {(scan.h1 || []).length > 0 && (
-                  <div className="mb-3">
-                    <div className="adam-mono text-[10px] uppercase tracking-[0.22em] text-white/40 mb-1.5">Top H1</div>
-                    <div className="text-sm text-white/85">{scan.h1[0]}</div>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-3 text-xs text-white/60">
-                  <div><span className="text-white/40">Words</span> · {scan.word_count}</div>
-                  <div><span className="text-white/40">Lang</span> · {scan.language || 'auto'}</div>
-                </div>
+              <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638] mb-2">One more thing</div>
+              <div className="text-[15px] text-white/90 leading-[1.55] mb-4">
+                If you have a website, share it with me. I can give you a quick snapshot of what I see. Totally optional.
               </div>
-            ) : (
-              <div className="text-xs text-white/40 leading-relaxed">
-                Paste your live website URL. ADAM will parse the copy, title, meta and headings — then talk to you as if it just met the brand.
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  data-testid="adam-url-input"
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && runScan()}
+                  placeholder="your-brand.com"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm placeholder:text-white/30"
+                />
+                <button data-testid="adam-scan-btn" onClick={() => runScan()} disabled={!urlValue.trim()} className="px-5 py-2.5 rounded-full bg-[#D72638] text-white text-xs font-semibold uppercase tracking-widest hover:bg-[#ff2f45] disabled:opacity-40 disabled:cursor-not-allowed">
+                  Analyse
+                </button>
               </div>
-            )}
+              <button data-testid="adam-skip-website" onClick={skipWebsite} className="adam-mono text-[10px] uppercase tracking-[0.28em] text-white/45 hover:text-white flex items-center gap-1.5">
+                Continue without website <ChevronRight size={12} />
+              </button>
+              {scanErr && <div className="mt-3 text-xs text-[#F43F5E]">{scanErr}</div>}
+            </motion.div>
+          )}
 
-            {scan && (
-              <div className="mt-6">
-                <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-white/40 mb-3">Try asking</div>
-                <div className="flex flex-col gap-2">
-                  {suggestions.map((s) => (
+          {phase === 'scanning' && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex items-center gap-3 text-white/70 text-sm" data-testid="adam-scanning">
+              <Loader2 size={14} className="animate-spin text-[#D72638]" /> Reading your website…
+            </div>
+          )}
+
+          {/* Summary reward */}
+          {summaryLoading && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex items-center gap-3 text-white/70 text-sm" data-testid="adam-summary-loading">
+              <Loader2 size={14} className="animate-spin text-[#D72638]" /> Composing your snapshot…
+            </div>
+          )}
+          {summary && !summaryLoading && <SummaryCards summary={summary} />}
+
+          {/* Deep-menu */}
+          {phase === 'deep_menu' && summary && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5" data-testid="adam-deep-menu">
+              <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-white/45 mb-3 flex items-center gap-2"><Compass size={12} /> If you&apos;d like, I can go deeper</div>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {DEEP_ACTIONS.map((a) => (
+                  <button
+                    key={a.id}
+                    data-testid={`adam-deep-${a.id}`}
+                    onClick={() => onDeepAction(a.id)}
+                    className={`text-left px-4 py-3 rounded-xl border flex items-center gap-3 transition-all ${
+                      a.accent
+                        ? 'border-[#D72638] bg-[#D72638] text-white hover:bg-[#ff2f45]'
+                        : a.muted
+                          ? 'border-white/10 text-white/50 hover:text-white/85 bg-transparent'
+                          : 'border-white/15 text-white/90 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/25'
+                    }`}
+                  >
+                    <a.icon size={15} />
+                    <span className="text-sm font-medium">{a.label}</span>
+                    <ArrowUpRight size={14} className="ml-auto opacity-60" />
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Roadmap */}
+          {(roadmap || roadmapLoading) && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-[#D72638]/40 bg-black/60 p-5 md:p-6" data-testid="adam-roadmap">
+              <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638] mb-3 flex items-center gap-2">
+                <FileText size={12} /> Your 90-day roadmap
+              </div>
+              {roadmapLoading && !roadmap ? (
+                <div className="flex items-center gap-2 text-sm text-white/60"><Loader2 size={14} className="animate-spin" /> Composing…</div>
+              ) : (
+                <>
+                  <Markdown text={roadmap} />
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
                     <button
-                      key={s}
-                      onClick={() => sendMessage(s)}
-                      data-testid="adam-suggestion"
-                      className="text-left text-sm text-white/75 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2.5 transition-colors"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
+                      onClick={() => {
+                        const blob = new Blob([`# 90-day Roadmap for ${profile.company || profile.name || 'your business'}\n\nGenerated by ADAM · Adcom Media\n\n${roadmap}`], { type: 'text/markdown' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `adam-roadmap.md`;
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                      }}
+                      className="px-4 py-2 rounded-full border border-white/15 text-[11px] uppercase tracking-widest hover:bg-white/5"
+                    >Download .md</button>
+                    <button
+                      data-testid="adam-open-handover"
+                      onClick={() => setShowHandover(true)}
+                      className="px-4 py-2 rounded-full bg-[#D72638] text-white text-[11px] uppercase tracking-widest hover:bg-[#ff2f45]"
+                    >Talk to ADCOM</button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+        </div>
+      </div>
 
-        {/* Right — chat + roadmap + lead */}
-        <section className="lg:col-span-8 flex flex-col min-h-0">
-          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6 space-y-4">
-            {!scan && !hasChat && (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638] mb-4">Step 1</div>
-                <div className="font-display text-3xl md:text-4xl tracking-tight max-w-xl leading-tight">
-                  Give ADAM your URL.<br />
-                  <span className="text-white/50">It will read your brand before it speaks.</span>
-                </div>
+      {/* Composer */}
+      {showComposer && (
+        <div className="shrink-0 border-t border-white/10 bg-black/70 px-4 md:px-8 py-4">
+          <div className="max-w-3xl mx-auto">
+            {!engineReady && <div className="mb-3 text-xs text-[#F43F5E]">AI engine offline. Configure EMERGENT_LLM_KEY.</div>}
+            {suggestions.length > 0 && !busy && (
+              <div className="flex flex-wrap gap-2 mb-3" data-testid="adam-suggestions">
+                {suggestions.map((s, i) => (
+                  <Chip key={i} onClick={() => sendTurn(s)} testid="adam-suggestion" disabled={disabledInput}>{s}</Chip>
+                ))}
               </div>
-            )}
-            {scan && !hasChat && (
-              <div className="text-white/70 text-sm max-w-xl">
-                <span className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638]">ADAM</span>
-                <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-4">
-                  Site read. I have a picture of <span className="text-white font-medium">{scan.title || 'your brand'}</span>. Pick a mode above, or start with one of the suggestions on the left. Ask me anything about growth, positioning, or how the market sees you.
-                </div>
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <ChatBubble key={i} msg={m} streaming={busy && i === messages.length - 1 && m.role === 'assistant'} />
-            ))}
-
-            {/* Roadmap */}
-            {(roadmap || buildingRoadmap) && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-[#D72638]/40 bg-black/60 p-5 md:p-6" data-testid="adam-roadmap">
-                <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638] mb-3 flex items-center gap-2">
-                  <FileText size={12} /> 90-Day Roadmap
-                </div>
-                {buildingRoadmap && !roadmap ? (
-                  <div className="flex items-center gap-2 text-sm text-white/60"><Loader2 size={14} className="animate-spin" /> Composing…</div>
-                ) : (
-                  <>
-                    <Markdown text={roadmap} />
-                    <div className="mt-6 flex flex-wrap items-center gap-3">
-                      <button onClick={downloadRoadmap} className="px-4 py-2 rounded-full border border-white/15 text-xs uppercase tracking-widest hover:bg-white/5">Download .md</button>
-                      <button onClick={() => setShowLead(true)} className="px-4 py-2 rounded-full bg-[#D72638] text-white text-xs uppercase tracking-widest hover:bg-[#ff2f45]">Talk to the studio</button>
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </div>
-
-          {/* Composer */}
-          <div className="shrink-0 border-t border-white/10 bg-black/60 px-4 md:px-8 py-4">
-            {!engineReady && (
-              <div className="mb-3 text-xs text-[#F43F5E]">AI engine offline. Configure EMERGENT_LLM_KEY.</div>
             )}
             <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <textarea
-                  data-testid="adam-chat-input"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={scan ? 'Ask ADAM anything about growth, brand or SEO…' : 'Scan a site first, then ask ADAM anything.'}
-                  disabled={!scan || busy}
-                  rows={1}
-                  className="w-full resize-none px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 focus:border-[#D72638] outline-none text-sm placeholder:text-white/30 disabled:opacity-50"
-                />
-              </div>
+              <textarea
+                data-testid="adam-chat-input"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendTurn(input); } }}
+                placeholder="Type your reply…"
+                disabled={disabledInput}
+                rows={1}
+                className="flex-1 resize-none px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 focus:border-[#D72638] outline-none text-sm placeholder:text-white/30 disabled:opacity-50"
+              />
               <button
                 data-testid="adam-send-btn"
-                onClick={() => sendMessage()}
-                disabled={!scan || !input.trim() || busy}
+                onClick={() => sendTurn(input)}
+                disabled={disabledInput || !input.trim()}
                 className="w-11 h-11 rounded-full bg-[#D72638] text-white flex items-center justify-center hover:bg-[#ff2f45] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                title="Send"
               >
                 {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               </button>
             </div>
-            {hasChat && !roadmap && !buildingRoadmap && (
-              <div className="mt-3 flex items-center justify-between flex-wrap gap-3">
-                <button onClick={generateRoadmap} disabled={busy} data-testid="adam-generate-roadmap" className="adam-mono text-[10px] uppercase tracking-[0.28em] text-white/50 hover:text-white flex items-center gap-2 disabled:opacity-40">
-                  <FileText size={12} /> Generate 90-day roadmap
-                </button>
-                <button onClick={() => setShowLead(true)} data-testid="adam-open-lead" className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638] hover:text-white flex items-center gap-2">
-                  Talk to the studio <ChevronRight size={12} />
-                </button>
-              </div>
-            )}
           </div>
-        </section>
-      </div>
+        </div>
+      )}
 
-      {/* Lead capture */}
+      {/* Handover modal */}
       <AnimatePresence>
-        {showLead && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-40 bg-black/80 backdrop-blur-lg flex items-center justify-center p-4" data-testid="adam-lead-modal">
-            <motion.div initial={{ scale: 0.95, y: 10, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-3xl p-8">
-              {leadSent ? (
-                <div className="text-center py-4">
+        {showHandover && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-40 bg-black/80 backdrop-blur-lg flex items-center justify-center p-4"
+            data-testid="adam-handover-modal"
+          >
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-3xl p-8">
+              {handoverSent ? (
+                <div className="text-center py-4" data-testid="adam-handover-success">
                   <div className="mx-auto w-12 h-12 rounded-full bg-[#D72638]/15 border border-[#D72638]/40 flex items-center justify-center mb-4">
                     <Check size={20} className="text-[#D72638]" />
                   </div>
-                  <div className="font-display text-2xl mb-2">Thanks — we'll be in touch.</div>
-                  <div className="text-sm text-white/60">The studio will reply within one working day.</div>
-                  <button onClick={() => { setShowLead(false); setLeadSent(false); }} className="mt-6 px-5 py-2 rounded-full border border-white/15 text-xs uppercase tracking-widest hover:bg-white/5">Close</button>
+                  <div className="font-display text-2xl mb-2">Brief sent to the studio.</div>
+                  <div className="text-sm text-white/60">A strategist will reach out within one working day — with everything ADAM learned already in hand.</div>
+                  <button onClick={() => { setShowHandover(false); setHandoverSent(false); onExit && onExit(); }} className="mt-6 px-5 py-2 rounded-full border border-white/15 text-xs uppercase tracking-widest hover:bg-white/5">Close</button>
                 </div>
               ) : (
                 <>
                   <div className="adam-mono text-[10px] uppercase tracking-[0.28em] text-[#D72638] mb-2">Handover</div>
-                  <div className="font-display text-2xl md:text-3xl tracking-tight mb-5">Bring in the humans.</div>
-                  <p className="text-sm text-white/60 mb-6">ADAM has enough context. Leave your details and a partner from Adcom will reach out with a tailored next step — no pitch deck, no fluff.</p>
+                  <div className="font-display text-2xl md:text-3xl tracking-tight mb-4">Bring in the humans.</div>
+                  <p className="text-sm text-white/60 leading-relaxed mb-5">
+                    I&apos;ll pass everything you&apos;ve shared — the business context, the summary and the roadmap if we built one — to a strategist at ADCOM. No pitch deck, no dead form.
+                  </p>
                   <div className="space-y-3">
-                    <input placeholder="Your name" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} data-testid="adam-lead-name" className="w-full px-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm" />
-                    <input placeholder="Work email" value={lead.email} onChange={(e) => setLead({ ...lead, email: e.target.value })} data-testid="adam-lead-email" className="w-full px-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm" />
-                    <textarea placeholder="Anything specific you want the team to see?" value={lead.message} onChange={(e) => setLead({ ...lead, message: e.target.value })} data-testid="adam-lead-message" rows={3} className="w-full px-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm placeholder:text-white/30" />
+                    {!profile.name && (
+                      <input placeholder="Your name" onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))} data-testid="adam-handover-name" className="w-full px-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm" />
+                    )}
+                    {profile.name && (
+                      <div className="text-xs text-white/50 flex items-center gap-2"><Check size={12} className="text-[#D72638]" /> Name: <span className="text-white/85">{profile.name}</span></div>
+                    )}
+                    {!profile.email && (
+                      <input placeholder="Work email" onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} data-testid="adam-handover-email" className="w-full px-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm" />
+                    )}
+                    {profile.email && (
+                      <div className="text-xs text-white/50 flex items-center gap-2"><Check size={12} className="text-[#D72638]" /> Email: <span className="text-white/85">{profile.email}</span></div>
+                    )}
+                    {!profile.phone && (
+                      <input placeholder="Phone (optional)" onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))} data-testid="adam-handover-phone" className="w-full px-4 py-3 rounded-xl bg-black border border-white/10 focus:border-[#D72638] outline-none text-sm" />
+                    )}
+                    {profile.phone && (
+                      <div className="text-xs text-white/50 flex items-center gap-2"><Check size={12} className="text-[#D72638]" /> Phone: <span className="text-white/85">{profile.phone}</span></div>
+                    )}
                   </div>
-                  {leadErr && <div className="mt-3 text-xs text-[#F43F5E]">{leadErr}</div>}
+                  {handoverErr && <div className="mt-3 text-xs text-[#F43F5E]">{handoverErr}</div>}
                   <div className="mt-6 flex items-center justify-end gap-3">
-                    <button onClick={() => setShowLead(false)} className="px-4 py-2 rounded-full border border-white/15 text-xs uppercase tracking-widest hover:bg-white/5">Cancel</button>
-                    <button onClick={submitLead} data-testid="adam-lead-submit" className="px-5 py-2 rounded-full bg-[#D72638] text-white text-xs uppercase tracking-widest hover:bg-[#ff2f45]">Send to studio</button>
+                    <button onClick={() => setShowHandover(false)} className="px-4 py-2 rounded-full border border-white/15 text-xs uppercase tracking-widest hover:bg-white/5">Not yet</button>
+                    <button onClick={submitHandover} data-testid="adam-handover-submit" className="px-5 py-2 rounded-full bg-[#D72638] text-white text-xs uppercase tracking-widest hover:bg-[#ff2f45]">Send brief to ADCOM</button>
                   </div>
                 </>
               )}

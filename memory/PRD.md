@@ -16,20 +16,21 @@ Build a world-class, premium digital marketing agency website for **Adcom Media*
 - Blog posts migrated to MongoDB with view counters + popular-post analytics dashboard
 
 ## Recent Changes
-- **2026-07 (this run)** — Added `auth.py` (Emergent Google Auth + session_token cookie), `blogs.py` (Blog CRUD + view analytics + seed migration), `adam_intel.py` (website scraper via BeautifulSoup + GPT-5.6-sol streaming chat + 90-day roadmap). Frontend: `/adcom-admin` route with login/dashboard/markdown editor, ADAM Intelligence Workspace (`AdamWorkspace.jsx`) replaces static "explore" phase, Blog.jsx / BlogPost.jsx now fetch from `/api/blogs` (hardcoded `blogPosts.js` deleted).
-- **2026-07 (earlier)** — Added mobile-only "Activate ADAM" pill button in footer.
-- **2026-07** — ADAM easter egg (Konami + 11-tap), ElevenLabs voice sync, shareable badge.
+- **2026-07 (this run)** — ADAM workspace rebuilt as a **conversational AI Growth Consultant** (v2). Removed URL-first UX. Added `/app/backend/adam_leads.py` with lead lifecycle (`DRAFT → QUALIFIED → ANALYSIS_STARTED → ANALYSIS_COMPLETED → CONTACT_REQUESTED → CONVERTED`), progressive `/api/adam/discover` conversational endpoint that returns structured JSON (reply + suggestions + extracted fields + ready_for_summary), `/api/adam/summary` for business + optional website snapshot, `/api/adam/handover` that mirrors lead into `contacts` and fires Resend brief email. Frontend `AdamWorkspace.jsx` full rewrite: greet → dynamic conversation → optional website scan → summary cards reward → 5-button deep-menu (Roadmap / Audit / Marketing / Talk / Done) → handover modal. Cleaned duplicate top-right controls in `AdamProtocol.jsx` during explore phase.
+- **2026-07 (earlier)** — Added `auth.py` (Emergent Google Auth), `blogs.py` (Blog CRUD + view analytics + seed migration), initial `adam_intel.py` (scraper + streaming chat + roadmap). Admin panel at `/adcom-admin` with markdown editor.
+- **2026-07** — Mobile "Activate ADAM" pill button in footer. ADAM easter egg (Konami + 11-tap), ElevenLabs voice sync, shareable badge.
 
 ## Architecture
 - `/app/frontend/src/` — React (Tailwind, framer-motion, react-router-dom)
 - `/app/frontend/src/pages/admin/` — Admin panel (login, dashboard, markdown editor)
-- `/app/frontend/src/components/adam/AdamWorkspace.jsx` — AI CMO workspace
+- `/app/frontend/src/components/adam/AdamWorkspace.jsx` — Conversational AI Growth Consultant
 - `/app/frontend/src/lib/api.js` — Central API client with SSE streaming
-- `/app/backend/` — FastAPI split into `server.py` + `auth.py` + `blogs.py` + `adam_intel.py`
+- `/app/backend/` — FastAPI: `server.py` + `auth.py` + `blogs.py` + `adam_intel.py` + `adam_leads.py`
 - `/app/memory/test_credentials.md` — Admin session injection playbook for testing
 
 ## DB Schema
-- `contacts`: `{name, email, company, website, message, source, ...}` (source='adam-workspace' for ADAM leads)
+- `contacts`: `{name, email, company, website, message, source, ...}` (source='adam-workspace' for ADAM leads mirrored on handover)
+- `adam_leads` **(new)**: `{lead_id, session_id, profile:{name,company,industry,business_type,location,market,goal,audience,marketing_channels,pain_points,budget,timeline,website,email,phone,preferred_contact}, transcript:[{role,text}], status:DRAFT|QUALIFIED|ANALYSIS_STARTED|ANALYSIS_COMPLETED|CONTACT_REQUESTED|CONVERTED, lead_score, business_summary, website_summary, roadmap_markdown, created_at, updated_at}`
 - `blogs`: `{id, slug, title, excerpt, category, read_time, date, cover, author:{name,role,avatar}, body:[str], views, published, created_at, updated_at}`
 - `users`: `{user_id, email, name, picture, role, created_at, last_login}` (role: 'chief' | 'admin')
 - `user_sessions`: `{user_id, session_token, expires_at, created_at}`
@@ -38,7 +39,8 @@ Build a world-class, premium digital marketing agency website for **Adcom Media*
 - **Auth**: `POST /api/auth/session`, `GET /api/auth/me`, `POST /api/auth/logout`
 - **Blogs (public)**: `GET /api/blogs`, `GET /api/blogs/{slug}` (increments views)
 - **Blogs (admin)**: `POST /api/admin/blogs`, `PATCH /api/admin/blogs/{id}`, `DELETE /api/admin/blogs/{id}`, `GET /api/admin/analytics`
-- **ADAM**: `GET /api/adam/status`, `POST /api/adam/scrape`, `POST /api/adam/chat` (SSE), `POST /api/adam/roadmap`, `POST /api/adam/voice` (ElevenLabs TTS)
+- **ADAM Intel**: `GET /api/adam/status`, `POST /api/adam/scrape`, `POST /api/adam/chat` (SSE), `POST /api/adam/roadmap`, `POST /api/adam/voice` (ElevenLabs TTS)
+- **ADAM Conversational (new)**: `POST /api/adam/discover`, `POST /api/adam/lead/upsert`, `GET /api/adam/lead/{session_id}`, `POST /api/adam/summary`, `POST /api/adam/handover`
 - **Contact**: `POST /api/contact` (Resend email → `hello.adcommedia@gmail.com`)
 
 ## Integrations

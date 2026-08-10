@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from auth import build_auth_router
 from blogs import build_blog_router, seed_blogs_if_empty
 from adam_intel import build_adam_router
+from adam_leads import build_adam_leads_router
 
 
 ROOT_DIR = Path(__file__).parent
@@ -264,6 +265,7 @@ _auth_router, _get_current_user, _require_admin = build_auth_router(db)
 app.include_router(_auth_router)
 app.include_router(build_blog_router(db, _require_admin))
 app.include_router(build_adam_router())
+app.include_router(build_adam_leads_router(db))
 
 app.add_middleware(
     CORSMiddleware,

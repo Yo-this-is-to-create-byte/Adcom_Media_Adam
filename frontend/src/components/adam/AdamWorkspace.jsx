@@ -26,6 +26,34 @@ function newSessionId() {
   return 'adam_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
 }
 
+const RESUME_STORAGE_KEY = 'adcom_adam_last_session';
+const RESUME_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function readResumeHint() {
+  try {
+    const raw = window.localStorage.getItem(RESUME_STORAGE_KEY);
+    if (!raw) return null;
+    const j = JSON.parse(raw);
+    if (!j?.session_id) return null;
+    if (j.ts && Date.now() - j.ts > RESUME_MAX_AGE_MS) return null;
+    return j;
+  } catch { return null; }
+}
+function writeResumeHint(sessionId, profile) {
+  try {
+    window.localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify({
+      session_id: sessionId,
+      email: profile?.email || null,
+      name: profile?.name || null,
+      company: profile?.company || null,
+      ts: Date.now(),
+    }));
+  } catch { /* ignore */ }
+}
+function clearResumeHint() {
+  try { window.localStorage.removeItem(RESUME_STORAGE_KEY); } catch { /* ignore */ }
+}
+
 function siteContextSummary(scan) {
   if (!scan) return '';
   const h1s = (scan.h1 || []).slice(0, 3).join(' · ');
@@ -203,11 +231,74 @@ export default function AdamWorkspace({ onExit }) {
   const scrollRef = useRef(null);
   const turnCountRef = useRef(0);
 
+  // Return Visitor Continuity — check for a prior session
+  const [resumeHint, setResumeHint] = useState(null);
+  const [resuming, setResuming] = useState(false);
+
   useEffect(() => {
     apiGet('/adam/status').then((s) => setEngineReady(!!s.llm_enabled)).catch(() => setEngineReady(false));
-    // seed opening line into the transcript
+    const hint = readResumeHint();
+    if (hint) {
+      setResumeHint(hint);
+      // Don't show opening line yet — wait for user to choose
+      setMessages([]);
+    } else {
+      setMessages([{ role: 'assistant', text: OPENING_LINE }]);
+    }
+  }, []);
+
+  // Persist the current session pointer whenever profile updates enough to identify the visitor
+  useEffect(() => {
+    if (profile.email || profile.name || profile.company) {
+      writeResumeHint(sessionIdRef.current, profile);
+    }
+  }, [profile.email, profile.name, profile.company]); // eslint-disable-line
+
+  const startFresh = useCallback(() => {
+    clearResumeHint();
+    sessionIdRef.current = newSessionId();
+    setResumeHint(null);
+    setProfile({});
+    setSummary(null);
+    setRoadmap('');
+    setScan(null);
+    setPhase('greet');
+    setSuggestions(OPENING_CHIPS);
     setMessages([{ role: 'assistant', text: OPENING_LINE }]);
   }, []);
+
+  const resumePrevious = useCallback(async () => {
+    if (!resumeHint) return;
+    setResuming(true);
+    try {
+      const doc = await apiGet(`/adam/lead/${encodeURIComponent(resumeHint.session_id)}`);
+      sessionIdRef.current = doc.session_id;
+      const restoredMessages = (doc.transcript || []).map((t) => ({ role: t.role, text: t.text }));
+      const greetName = doc.profile?.name ? doc.profile.name.split(' ')[0] : null;
+      const welcome = greetName
+        ? `Welcome back, ${greetName}. Picking up right where we left off — nothing to repeat.`
+        : `Welcome back. Picking up right where we left off — nothing to repeat.`;
+      setProfile(doc.profile || {});
+      setMessages([...restoredMessages, { role: 'assistant', text: welcome }]);
+      if (doc.business_summary) setSummary({ business: doc.business_summary, website: doc.website_summary || null });
+      if (doc.roadmap_markdown) setRoadmap(doc.roadmap_markdown);
+      // Determine phase based on progress
+      if (doc.status === 'CONTACT_REQUESTED' || doc.status === 'CONVERTED') {
+        setPhase('done');
+      } else if (doc.roadmap_markdown) {
+        setPhase('roadmap');
+      } else if (doc.business_summary) {
+        setPhase('deep_menu');
+      } else {
+        setPhase('discover');
+      }
+      setResumeHint(null);
+    } catch (e) {
+      // Previous session gone — start fresh
+      clearResumeHint();
+      startFresh();
+    } finally { setResuming(false); }
+  }, [resumeHint, startFresh]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -404,6 +495,49 @@ export default function AdamWorkspace({ onExit }) {
       {/* Body */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 md:px-8 py-6">
         <div className="max-w-3xl mx-auto space-y-4">
+          {/* Return Visitor Continuity banner */}
+          {resumeHint && !resuming && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-[#D72638]/40 bg-black/60 backdrop-blur-md p-6 mb-2"
+              data-testid="adam-resume-banner"
+            >
+              <div className="adam-mono text-[10px] uppercase tracking-[0.3em] text-[#D72638] mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#D72638] animate-pulse" /> Welcome back
+              </div>
+              <div className="font-display text-2xl md:text-3xl tracking-tight leading-tight mb-2">
+                {resumeHint.name ? `Hey ${resumeHint.name.split(' ')[0]},` : 'You were here before.'}
+              </div>
+              <div className="text-white/70 text-[15px] leading-relaxed mb-5">
+                {resumeHint.company
+                  ? <>I still have our thread on <span className="text-white">{resumeHint.company}</span>. Want to pick up where we left off?</>
+                  : <>I still have our thread from earlier. Want to pick up where we left off?</>
+                }
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={resumePrevious}
+                  data-testid="adam-resume-yes"
+                  className="px-5 py-2.5 rounded-full bg-[#D72638] text-white text-xs uppercase tracking-widest font-semibold hover:bg-[#ff2f45] transition-colors"
+                >
+                  Resume where I left off
+                </button>
+                <button
+                  onClick={startFresh}
+                  data-testid="adam-resume-fresh"
+                  className="px-5 py-2.5 rounded-full border border-white/15 text-white/80 text-xs uppercase tracking-widest hover:bg-white/5 transition-colors"
+                >
+                  Start something new
+                </button>
+              </div>
+            </motion.div>
+          )}
+          {resuming && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex items-center gap-3 text-white/70 text-sm">
+              <Loader2 size={14} className="animate-spin text-[#D72638]" /> Restoring your thread…
+            </div>
+          )}
+
           {messages.map((m, i) => {
             const isLatest = i === messages.length - 1;
             if (m.role === 'assistant') return <AssistantBubble key={i} text={m.text} isLatest={isLatest && !busy && !summaryLoading} />;

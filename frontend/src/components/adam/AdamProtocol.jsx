@@ -12,6 +12,19 @@ import AdamNarrative from './AdamNarrative';
 import AdamWorkspace from './AdamWorkspace';
 
 const STORAGE_KEY = 'adcom_adam_unlocked';
+const SESSION_INTRO_KEY = 'adam_intro_count'; // sessionStorage — resets per tab
+
+function readIntroCount() {
+  try { return parseInt(window.sessionStorage.getItem(SESSION_INTRO_KEY) || '0', 10) || 0; }
+  catch { return 0; }
+}
+function bumpIntroCount() {
+  try {
+    const n = readIntroCount() + 1;
+    window.sessionStorage.setItem(SESSION_INTRO_KEY, String(n));
+    return n;
+  } catch { return 0; }
+}
 
 const FINALE = [
   { t: 'One last thing...', muted: true },
@@ -58,14 +71,30 @@ export default function AdamProtocol() {
     adamAudio.glitch(0.45);
     adamAudio.startAmbient(0.05, 2.4);
     setActive(true);
-    setPhase('boot');
+    // Intro-replay logic: 1st activation → full intro. 2nd → intro w/ Skip. 3rd+ → straight into workspace.
+    const nextCount = bumpIntroCount();
+    if (nextCount >= 3) {
+      setPhase('explore');
+      document.body.classList.remove('adam-nocursor');
+    } else {
+      setPhase('boot');
+      document.body.classList.add('adam-nocursor');
+    }
     try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) { /* ignore */ }
     window.dispatchEvent(new Event('adam:unlocked'));
     document.body.style.overflow = 'hidden';
-    document.body.classList.add('adam-nocursor');
     clearTimeout(finaleTimer.current);
     finaleTimer.current = setTimeout(() => setShowFinale(true), 200000);
   }, [active]);
+
+  // Skip Intro (only shown on the 2nd activation of the session)
+  const skipIntro = useCallback(() => {
+    adamAudio.cancelSpeech();
+    adamAudio.softConfirm();
+    clearTimeout(dashTimer.current);
+    document.body.classList.remove('adam-nocursor');
+    setPhase('explore');
+  }, []);
 
   useKonamiCode(activate);
 
@@ -154,6 +183,20 @@ export default function AdamProtocol() {
           >
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
+          )}
+
+          {/* Skip Intro — only shown on 2nd session activation, during intro phases */}
+          {phase !== 'explore' && readIntroCount() === 2 && (
+            <motion.button
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              onClick={skipIntro}
+              data-testid="adam-skip-intro"
+              className="absolute top-4 right-4 md:top-6 md:right-8 z-40 adam-mono text-[10px] uppercase tracking-[0.24em] px-4 py-2 rounded-full border border-white/15 bg-black/40 backdrop-blur-xl text-white/70 hover:text-white hover:border-white/40 transition-colors"
+            >
+              Skip intro →
+            </motion.button>
           )}
 
           {/* boot */}

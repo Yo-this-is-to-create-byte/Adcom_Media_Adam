@@ -1,0 +1,35 @@
+{
+  "summary": "Iteration 5 — Password login + brute force + return visitor + intro replay + secret info card + konami guard. All 17 backend pytest cases passed (100%). All frontend flows tested via Playwright passed (100%): /login rendering, wrong credentials show login-denied, /adcom-admin unauth redirects to /login, correct login navigates to admin dashboard, admin-signout logs out to /login, secret-info-btn appears after 60s on desktop only (mobile 390px correctly hidden), secret-info-card opens with Konami visual + closes via ×/outside/ESC without dimming page, Konami code guarded inside input fields, Konami outside inputs activates ADAM, sessionStorage intro replay counter 1/2/3 behaves correctly (full intro → skip button → immediate workspace), sessionStorage clear resets to full intro, return visitor banner renders with resume-yes/resume-fresh buttons and prior transcript is restored on resume-yes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "CORS", "issue": "backend/.env has CORS_ORIGINS=\"*\" combined with allow_credentials=True in CORSMiddleware. Per CORS spec, browsers reject Access-Control-Allow-Origin: * when credentials are used. Currently works because same-site preview URL doesn't need CORS, but any future cross-origin admin dashboard call from a different origin would fail. Recommend setting CORS_ORIGINS to explicit frontend origin(s)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_password_auth_and_leads.py",
+    "/app/test_reports/pytest/iter5_results.xml"
+  ],
+  "action_items": [
+    "Consider tightening CORS_ORIGINS (currently '*' with allow_credentials=True — invalid per spec, may bite when admin panel is served from a different origin).",
+    "SecretInfoButton mounts a 60s timer once on load; if user resizes from desktop to mobile mid-session the button DOM is still created (though CSS `hidden md:block` still hides it). Cosmetic — no user-facing bug."
+  ],
+  "critical_code_review_comments": [
+    "auth.py password_login: brute-force counter is keyed on `ip:email`. If a legitimate user is behind a NAT and someone else spams their email, both would be locked out. Acceptable for admin bootstrap but worth noting.",
+    "auth.py password_login uses `x-forwarded-for` first header entry unstripped of trusted proxies — OK for now given single Kubernetes ingress, but never trust XFF blindly if bypassing ingress becomes possible.",
+    "adam_leads.get_lead_by_email trusts URL path — since the endpoint is UNAUTHENTICATED, anyone can enumerate leads by guessing emails. Not a security break for lead-capture app, but noteworthy — consider requiring at least a matching session_id or a lightweight token."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Admin: hello.adcommedia@gmail.com / @mitShukla03 (bootstrap seed from backend/.env). Bcrypt hash confirmed starts with $2b$, role=chief.",
+  "seed_data_creation": "Tests transiently inserted a lead with session_id adam_TEST_visitor_* and a user not_allowed@example.com — cleaned up in teardown. Also cleaned db.login_attempts, db.user_sessions where kind='password', and adam_TEST_* leads post-run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "iteration_5 verified new password-auth (with 5-attempt brute-force lockout), same-message 401 for wrong/unknown/non-allowlisted, admin seed idempotency, /api/auth/logout clears session row, /api/adam/lead/by-email/{email} (200/400/404 paths + case-insensitive). Frontend covered: /login form + testids, wrong→denied, correct→admin dashboard, /adcom-admin unauth→/login, admin-signout→/login, secret-info-btn desktop-only after 60s, secret-info-card content + close (×/outside/ESC) without backdrop dimming, konami guard inside inputs, konami outside inputs activates ADAM, sessionStorage intro count 1/2/3 flow + reset, return-visitor banner + resume-yes restores transcript. Google OAuth session flow was NOT re-tested end-to-end (needs real Google account) — spot-checked only that /api/auth/session route is still registered and /api/auth/me returns 401 without cookie.",
+  "rca of the issue": "N/A — no defects found."
+}

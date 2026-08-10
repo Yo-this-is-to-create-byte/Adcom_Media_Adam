@@ -16,17 +16,21 @@ Build a world-class, premium digital marketing agency website for **Adcom Media*
 - Blog posts migrated to MongoDB with view counters + popular-post analytics dashboard
 
 ## Recent Changes
-- **2026-07 (this run)** — ADAM workspace rebuilt as a **conversational AI Growth Consultant** (v2). Removed URL-first UX. Added `/app/backend/adam_leads.py` with lead lifecycle (`DRAFT → QUALIFIED → ANALYSIS_STARTED → ANALYSIS_COMPLETED → CONTACT_REQUESTED → CONVERTED`), progressive `/api/adam/discover` conversational endpoint that returns structured JSON (reply + suggestions + extracted fields + ready_for_summary), `/api/adam/summary` for business + optional website snapshot, `/api/adam/handover` that mirrors lead into `contacts` and fires Resend brief email. Frontend `AdamWorkspace.jsx` full rewrite: greet → dynamic conversation → optional website scan → summary cards reward → 5-button deep-menu (Roadmap / Audit / Marketing / Talk / Done) → handover modal. Cleaned duplicate top-right controls in `AdamProtocol.jsx` during explore phase.
-- **2026-07 (earlier)** — Added `auth.py` (Emergent Google Auth), `blogs.py` (Blog CRUD + view analytics + seed migration), initial `adam_intel.py` (scraper + streaming chat + roadmap). Admin panel at `/adcom-admin` with markdown editor.
-- **2026-07** — Mobile "Activate ADAM" pill button in footer. ADAM easter egg (Konami + 11-tap), ElevenLabs voice sync, shareable badge.
+- **2026-08 (this run)** — Master prompt shipped: (1) Internal `/login` with email+password (bcrypt + brute-force lockout + no-user-enumeration) alongside preserved Google OAuth. Seed admin: `hello.adcommedia@gmail.com` / `@mitShukla03`. (2) `/adcom-admin` now protected — redirects to `/login` when logged out. (3) sessionStorage-based intro replay: 1st activation full intro, 2nd + Skip button, 3rd+ opens workspace immediately. (4) Secret ⓘ button (bottom-right, desktop only, after 60s) opens a discreet floating Konami discovery card (non-modal, no backdrop, ×/outside/ESC closes). (5) ADAM Return Visitor Continuity — localStorage remembers `session_id + email/name/company`; on next visit shows a Welcome-back banner with `[Resume]` / `[Start fresh]`, hydrates profile + transcript + summary + roadmap from `db.adam_leads`. New endpoint `GET /api/adam/lead/by-email/{email}`. Konami code guard verified inside inputs/textareas.
+- **2026-07 earlier** — ADAM v2 conversational workspace, `adam_leads` collection, /discover, /summary, /handover.
+- **2026-07** — Blog CMS at `/adcom-admin` with markdown editor + view analytics, mobile ADAM activation button, ADAM easter egg (Konami + 11-tap), ElevenLabs voice sync.
 
 ## Architecture
-- `/app/frontend/src/` — React (Tailwind, framer-motion, react-router-dom)
-- `/app/frontend/src/pages/admin/` — Admin panel (login, dashboard, markdown editor)
-- `/app/frontend/src/components/adam/AdamWorkspace.jsx` — Conversational AI Growth Consultant
-- `/app/frontend/src/lib/api.js` — Central API client with SSE streaming
-- `/app/backend/` — FastAPI: `server.py` + `auth.py` + `blogs.py` + `adam_intel.py` + `adam_leads.py`
-- `/app/memory/test_credentials.md` — Admin session injection playbook for testing
+- `/app/frontend/src/pages/Login.jsx` — internal password login (with Google as secondary)
+- `/app/frontend/src/pages/admin/AdminPanel.jsx` — protected, redirects to `/login`
+- `/app/frontend/src/components/SecretInfoButton.jsx` — 60s desktop reveal + Konami discovery card
+- `/app/frontend/src/components/adam/AdamProtocol.jsx` — sessionStorage intro-replay counter + Skip button
+- `/app/frontend/src/components/adam/AdamWorkspace.jsx` — Return Visitor Continuity banner + resume flow
+- `/app/backend/auth.py` — password login (bcrypt) + seed_admin + brute-force
+- `/app/backend/adam_leads.py` — full lead lifecycle + by-email lookup + Resend handover email
+- `/app/backend/adam_intel.py` — scraper + streaming chat + roadmap
+- `/app/backend/blogs.py` — CMS CRUD + view analytics
+- `/app/backend/server.py` — router wiring + seeds + indexes
 
 ## DB Schema
 - `contacts`: `{name, email, company, website, message, source, ...}` (source='adam-workspace' for ADAM leads mirrored on handover)

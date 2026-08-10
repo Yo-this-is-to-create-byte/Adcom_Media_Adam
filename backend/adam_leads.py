@@ -242,6 +242,21 @@ def build_adam_leads_router(db) -> APIRouter:
             raise HTTPException(status_code=404, detail="No lead for this session")
         return doc
 
+    @router.get("/lead/by-email/{email}")
+    async def get_lead_by_email(email: str):
+        """Return the most recent lead for a given email (used for Return Visitor Continuity)."""
+        email_norm = email.strip().lower()
+        if "@" not in email_norm or len(email_norm) < 5:
+            raise HTTPException(status_code=400, detail="Invalid email")
+        doc = await db.adam_leads.find_one(
+            {"profile.email": {"$regex": f"^{re.escape(email_norm)}$", "$options": "i"}},
+            {"_id": 0},
+            sort=[("updated_at", -1)],
+        )
+        if not doc:
+            raise HTTPException(status_code=404, detail="No previous session")
+        return doc
+
     @router.post("/discover", response_model=DiscoverResponse)
     async def discover(payload: DiscoverRequest):
         key = _llm_key()

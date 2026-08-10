@@ -13,7 +13,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 
-from auth import build_auth_router
+from auth import build_auth_router, seed_admin
 from blogs import build_blog_router, seed_blogs_if_empty
 from adam_intel import build_adam_router
 from adam_leads import build_adam_leads_router
@@ -281,6 +281,15 @@ async def on_startup():
         await seed_blogs_if_empty(db)
     except Exception:
         logger.exception("Blog seeding failed")
+    try:
+        await seed_admin(db)
+    except Exception:
+        logger.exception("Admin seeding failed")
+    try:
+        await db.users.create_index("email", unique=True)
+        await db.login_attempts.create_index([("identifier", 1), ("ts", -1)])
+    except Exception:
+        logger.exception("Index creation failed")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

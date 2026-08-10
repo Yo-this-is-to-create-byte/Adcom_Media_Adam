@@ -15,6 +15,7 @@ import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import FAQ from '@/components/FAQ';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import SecretInfoButton from '@/components/SecretInfoButton';
 import AdamProtocol from '@/components/adam/AdamProtocol';
 import AdamBadge from '@/components/adam/AdamBadge';
 import PerformanceMarketing from '@/pages/PerformanceMarketing';
@@ -35,6 +36,7 @@ import CaseStudyAusTyre from '@/pages/CaseStudyAusTyre';
 import CaseStudySkylarr from '@/pages/CaseStudySkylarr';
 import AdminPanel from '@/pages/admin/AdminPanel';
 import AdminAuthCallback from '@/pages/admin/AdminAuthCallback';
+import Login from '@/pages/Login';
 
 function Landing() {
   return (
@@ -68,6 +70,7 @@ function AppRouter() {
   return (
     <>
       <WhatsAppButton />
+      <SecretInfoButton />
       <AdamProtocol />
       <AdamBadge />
       <Routes>
@@ -89,6 +92,7 @@ function AppRouter() {
         <Route path="/case-studies/aus-tyre" element={<CaseStudyAusTyre />} />
         <Route path="/case-studies/skylarr" element={<CaseStudySkylarr />} />
         <Route path="/adcom-admin" element={<AdminPanel />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </>
   );

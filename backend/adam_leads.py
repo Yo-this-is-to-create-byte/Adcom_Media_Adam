@@ -112,6 +112,10 @@ class HandoverRequest(BaseModel):
     site_context: Optional[str] = None
 
 
+class StatusPatch(BaseModel):
+    status: str
+
+
 # ---------------- LLM helpers ---------------- #
 
 DISCOVER_SYSTEM = """You are ADAM — Adcom Media's internal AI Growth Consultant. You are a senior marketing strategist having a natural conversation with a business owner. You are NOT a form. You are NOT a chatbot. You are the sharpest CMO they've ever spoken to.
@@ -176,8 +180,10 @@ def _transcript_snippet(transcript: List[TranscriptTurn], last_n: int = 8) -> st
 
 # ---------------- Router ---------------- #
 
-def build_adam_leads_router(db) -> APIRouter:
+def build_adam_leads_router(db, require_admin=None) -> APIRouter:
     router = APIRouter(prefix="/api/adam", tags=["adam-leads"])
+    # Sibling admin router (share module state)
+    admin_router = APIRouter(prefix="/api/admin", tags=["adam-leads-admin"])
 
     async def _load_lead(session_id: str) -> Optional[dict]:
         return await db.adam_leads.find_one({"session_id": session_id}, {"_id": 0})
@@ -534,5 +540,76 @@ def build_adam_leads_router(db) -> APIRouter:
         asyncio.create_task(_send())
 
         return {"lead_id": lead_id, "status": "CONTACT_REQUESTED", "lead_score": score}
+
+    # ---------------- Admin endpoints ---------------- #
+    if require_admin is not None:
+        from fastapi import Depends, Query
+
+        @admin_router.get("/leads")
+        async def list_leads(
+            status: Optional[str] = Query(default=None),
+            q: Optional[str] = Query(default=None),
+            limit: int = Query(default=100, le=500),
+            user=Depends(require_admin),
+        ):
+            query: Dict[str, Any] = {}
+            if status:
+                query["status"] = status.upper()
+            if q:
+                query["$or"] = [
+                    {"profile.name": {"$regex": q, "$options": "i"}},
+                    {"profile.company": {"$regex": q, "$options": "i"}},
+                    {"profile.email": {"$regex": q, "$options": "i"}},
+                ]
+            docs = await db.adam_leads.find(query, {"_id": 0}).sort("updated_at", -1).to_list(limit)
+            return docs
+
+        @admin_router.get("/leads/stats")
+        async def lead_stats(user=Depends(require_admin)):
+            pipeline = [{"$group": {"_id": "$status", "count": {"$sum": 1}}}]
+            by_status: Dict[str, int] = {}
+            async for doc in db.adam_leads.aggregate(pipeline):
+                by_status[doc["_id"] or "DRAFT"] = doc["count"]
+            total = sum(by_status.values())
+            avg = None
+            score_agg = db.adam_leads.aggregate([{"$group": {"_id": None, "avg": {"$avg": "$lead_score"}}}])
+            async for doc in score_agg:
+                avg = doc.get("avg")
+            return {
+                "total": total,
+                "by_status": by_status,
+                "avg_score": round(avg or 0, 1),
+            }
+
+        @admin_router.get("/leads/{lead_id}")
+        async def get_lead_detail(lead_id: str, user=Depends(require_admin)):
+            doc = await db.adam_leads.find_one({"lead_id": lead_id}, {"_id": 0})
+            if not doc:
+                raise HTTPException(status_code=404, detail="Lead not found")
+            return doc
+
+        @admin_router.patch("/leads/{lead_id}/status")
+        async def update_lead_status(lead_id: str, payload: StatusPatch, user=Depends(require_admin)):
+            new_status = (payload.status or "").upper().strip()
+            if new_status not in STATUSES:
+                raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of {STATUSES}")
+            existing = await db.adam_leads.find_one({"lead_id": lead_id}, {"_id": 0})
+            if not existing:
+                raise HTTPException(status_code=404, detail="Lead not found")
+            await db.adam_leads.update_one(
+                {"lead_id": lead_id},
+                {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            return await db.adam_leads.find_one({"lead_id": lead_id}, {"_id": 0})
+
+        @admin_router.delete("/leads/{lead_id}")
+        async def delete_lead(lead_id: str, user=Depends(require_admin)):
+            existing = await db.adam_leads.find_one({"lead_id": lead_id}, {"_id": 0})
+            if not existing:
+                raise HTTPException(status_code=404, detail="Lead not found")
+            await db.adam_leads.delete_one({"lead_id": lead_id})
+            return {"ok": True}
+
+        return router, admin_router
 
     return router

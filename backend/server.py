@@ -265,7 +265,9 @@ _auth_router, _get_current_user, _require_admin = build_auth_router(db)
 app.include_router(_auth_router)
 app.include_router(build_blog_router(db, _require_admin))
 app.include_router(build_adam_router())
-app.include_router(build_adam_leads_router(db))
+_leads_router, _leads_admin_router = build_adam_leads_router(db, _require_admin)
+app.include_router(_leads_router)
+app.include_router(_leads_admin_router)
 
 app.add_middleware(
     CORSMiddleware,

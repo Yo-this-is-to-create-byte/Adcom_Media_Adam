@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Eye, LogOut, BarChart3, X, ArrowUpRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, LogOut, BarChart3, X, ArrowUpRight, Inbox, FileText } from 'lucide-react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
+import LeadInbox from './LeadInbox';
 
 function StatCard({ label, value, testid }) {
   return (
@@ -131,6 +132,7 @@ const Field = ({ label, children }) => (
 );
 
 export default function AdminDashboard({ user, onSignedOut }) {
+  const [tab, setTab] = useState('essays'); // essays | leads
   const [posts, setPosts] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -149,7 +151,7 @@ export default function AdminDashboard({ user, onSignedOut }) {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { if (tab === 'essays') refresh(); }, [tab]);
 
   const remove = async (p) => {
     if (!window.confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -158,7 +160,7 @@ export default function AdminDashboard({ user, onSignedOut }) {
   };
 
   const logout = async () => {
-    try { await apiPost('/auth/logout', {}); } catch {}
+    try { await apiPost('/auth/logout', {}); } catch (_) { /* ignore */ }
     onSignedOut();
   };
 
@@ -184,9 +186,20 @@ export default function AdminDashboard({ user, onSignedOut }) {
             </button>
           </div>
         </div>
+        {/* Tabs */}
+        <div className="max-w-7xl mx-auto px-6 border-t border-white/[0.06]">
+          <div className="flex items-center gap-1">
+            <TabButton active={tab === 'essays'} onClick={() => setTab('essays')} icon={FileText} label="Essays" testid="tab-essays" />
+            <TabButton active={tab === 'leads'} onClick={() => setTab('leads')} icon={Inbox} label="Lead inbox" testid="tab-leads" />
+          </div>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-10 md:py-14">
+        {tab === 'leads' ? (
+          <LeadInbox />
+        ) : (
+          <>
         {/* Hero row */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
@@ -265,6 +278,8 @@ export default function AdminDashboard({ user, onSignedOut }) {
             )}
           </ul>
         </div>
+          </>
+        )}
       </div>
 
       {creating && (
@@ -274,5 +289,21 @@ export default function AdminDashboard({ user, onSignedOut }) {
         <BlogEditor initial={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); refresh(); }} />
       )}
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon: Icon, label, testid }) {
+  return (
+    <button
+      onClick={onClick}
+      data-testid={testid}
+      className={`inline-flex items-center gap-2 px-4 py-3 text-sm border-b-2 transition-colors ${
+        active
+          ? 'border-[#F43F5E] text-white'
+          : 'border-transparent text-white/50 hover:text-white/85'
+      }`}
+    >
+      <Icon size={14} /> {label}
+    </button>
   );
 }

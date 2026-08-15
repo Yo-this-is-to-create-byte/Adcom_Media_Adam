@@ -16,9 +16,10 @@ Build a world-class, premium digital marketing agency website for **Adcom Media*
 - Blog posts migrated to MongoDB with view counters + popular-post analytics dashboard
 
 ## Recent Changes
-- **2026-08 (this run)** — Master prompt shipped: (1) Internal `/login` with email+password (bcrypt + brute-force lockout + no-user-enumeration) alongside preserved Google OAuth. Seed admin: `hello.adcommedia@gmail.com` / `@mitShukla03`. (2) `/adcom-admin` now protected — redirects to `/login` when logged out. (3) sessionStorage-based intro replay: 1st activation full intro, 2nd + Skip button, 3rd+ opens workspace immediately. (4) Secret ⓘ button (bottom-right, desktop only, after 60s) opens a discreet floating Konami discovery card (non-modal, no backdrop, ×/outside/ESC closes). (5) ADAM Return Visitor Continuity — localStorage remembers `session_id + email/name/company`; on next visit shows a Welcome-back banner with `[Resume]` / `[Start fresh]`, hydrates profile + transcript + summary + roadmap from `db.adam_leads`. New endpoint `GET /api/adam/lead/by-email/{email}`. Konami code guard verified inside inputs/textareas.
-- **2026-07 earlier** — ADAM v2 conversational workspace, `adam_leads` collection, /discover, /summary, /handover.
-- **2026-07** — Blog CMS at `/adcom-admin` with markdown editor + view analytics, mobile ADAM activation button, ADAM easter egg (Konami + 11-tap), ElevenLabs voice sync.
+- **2026-08 (this run)** — **Lead Inbox at `/adcom-admin`**: new "Lead inbox" tab shows every ADAM lead with status badge + score + transcript preview + one-click "Convert" button. Detail modal shows full profile, ADAM business summary, website snapshot, 90-day roadmap and complete transcript. Filter chips per status (Draft/Qualified/Analysis Started/Analysis Completed/Contact Requested/Converted) + search across company/email/name. Backend endpoints: `GET /api/admin/leads` (list + filter + search), `GET /api/admin/leads/stats`, `GET /api/admin/leads/{lead_id}`, `PATCH /api/admin/leads/{lead_id}/status`, `DELETE /api/admin/leads/{lead_id}` — all admin-protected.
+- **2026-08 earlier** — Secure `/login` (email+password with bcrypt + brute-force + no user-enumeration), Google OAuth kept as secondary. sessionStorage intro replay. Secret ⓘ button + Konami discovery card. Return Visitor Continuity.
+- **2026-07** — ADAM v2 conversational workspace, `adam_leads` collection, /discover, /summary, /handover.
+- **2026-07** — Blog CMS + admin panel, view analytics, mobile ADAM activation.
 
 ## Architecture
 - `/app/frontend/src/pages/Login.jsx` — internal password login (with Google as secondary)

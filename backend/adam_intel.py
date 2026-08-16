@@ -13,17 +13,23 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, HttpUrl
+from openai import AsyncOpenAI
 
 load_dotenv(Path(__file__).parent / ".env")
 logger = logging.getLogger(__name__)
 
 
 def _llm_key() -> Optional[str]:
-    return os.environ.get("EMERGENT_LLM_KEY")
+    # Support for standard OPENAI_API_KEY as well as the old EMERGENT_LLM_KEY
+    return os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
 
 
 def _model_name() -> str:
-    return os.environ.get("ADAM_LLM_MODEL", "gpt-5.6-sol")
+    # Use standard OpenAI models by default if old custom name is found
+    model = os.environ.get("ADAM_LLM_MODEL", "gpt-4o")
+    if "sol" in model:
+        return "gpt-4-turbo"
+    return model
 
 MODE_PROMPTS = {
     "strategy": (
@@ -173,38 +179,30 @@ def build_adam_router() -> APIRouter:
         key = _llm_key()
         if not key:
             raise HTTPException(status_code=503, detail="AI engine not configured")
-        try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-        except Exception:
-            logger.exception("emergentintegrations import failed")
-            raise HTTPException(status_code=503, detail="AI engine unavailable")
 
         system_msg = _build_system_message(payload.mode, payload.site_context)
+        client = AsyncOpenAI(api_key=key)
 
-        chat_client = LlmChat(
-            api_key=key,
-            session_id=payload.session_id,
-            system_message=system_msg,
-        ).with_model("openai", _model_name())
-
-        # Replay prior history so the model has continuity (in-memory only).
-        # emergentintegrations LlmChat tracks history internally per session_id.
-        # For simplicity, we send only the new user message and rely on frontend to keep display state.
+        messages = [{"role": "system", "content": system_msg}]
+        for msg in payload.history[-10:]:  # Keep last 10 messages for context
+            messages.append({"role": msg.role, "content": msg.text})
+        messages.append({"role": "user", "content": payload.message})
 
         async def token_stream():
             try:
-                from emergentintegrations.llm.chat import TextDelta, StreamDone
-                async for ev in chat_client.stream_message(UserMessage(text=payload.message)):
-                    if isinstance(ev, TextDelta):
-                        # SSE data frame
-                        chunk = ev.content.replace("\r", "")
+                stream = await client.chat.completions.create(
+                    model=_model_name(),
+                    messages=messages,
+                    stream=True,
+                )
+                async for chunk in stream:
+                    content = chunk.choices[0].delta.content
+                    if content:
                         # split on newlines to keep SSE valid
-                        for line in chunk.split("\n"):
+                        for line in content.replace("\r", "").split("\n"):
                             yield f"data: {line}\n"
                         yield "\n"
-                    elif isinstance(ev, StreamDone):
-                        yield "event: done\ndata: [DONE]\n\n"
-                        break
+                yield "event: done\ndata: [DONE]\n\n"
             except Exception as e:
                 logger.exception("ADAM chat stream failed")
                 yield f"event: error\ndata: {str(e)[:200]}\n\n"
@@ -225,10 +223,6 @@ def build_adam_router() -> APIRouter:
         key = _llm_key()
         if not key:
             raise HTTPException(status_code=503, detail="AI engine not configured")
-        try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-        except Exception:
-            raise HTTPException(status_code=503, detail="AI engine unavailable")
 
         system = (
             "You are ADAM, Adcom Media's AI CMO. Produce a crisp 90-day growth roadmap in markdown. "
@@ -239,14 +233,17 @@ def build_adam_router() -> APIRouter:
         if payload.site_context:
             system += "\n\nBRAND CONTEXT:\n" + payload.site_context[:3500]
 
-        chat_client = LlmChat(
-            api_key=key,
-            session_id=payload.session_id + ":roadmap",
-            system_message=system,
-        ).with_model("openai", _model_name())
+        client = AsyncOpenAI(api_key=key)
 
         try:
-            reply = await chat_client.send_message(UserMessage(text=f"Goal: {payload.goal}"))
+            response = await client.chat.completions.create(
+                model=_model_name(),
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": f"Goal: {payload.goal}"}
+                ]
+            )
+            reply = response.choices[0].message.content
         except Exception:
             logger.exception("Roadmap generation failed")
             raise HTTPException(status_code=502, detail="Roadmap generation failed")

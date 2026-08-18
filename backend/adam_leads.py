@@ -20,6 +20,7 @@ import resend
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from openai import AsyncOpenAI
 
 load_dotenv(Path(__file__).parent / ".env")
 logger = logging.getLogger(__name__)
@@ -30,11 +31,14 @@ RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 
 
 def _llm_key() -> Optional[str]:
-    return os.environ.get("EMERGENT_LLM_KEY")
+    return os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
 
 
 def _model_name() -> str:
-    return os.environ.get("ADAM_LLM_MODEL", "gpt-5.6-sol")
+    model = os.environ.get("ADAM_LLM_MODEL", "gpt-4o")
+    if "sol" in model:
+        return "gpt-4-turbo"
+    return model
 
 
 PROFILE_FIELDS = [
@@ -147,14 +151,11 @@ Do not put anything outside `extracted` that isn't one of those fields."""
 
 def _extract_json(text: str) -> dict:
     """Robustly pull a JSON object out of a possibly-messy LLM reply."""
-    # Strip code fences
     cleaned = re.sub(r"```(?:json)?", "", text or "").replace("```", "").strip()
-    # Fast path
     try:
         return json.loads(cleaned)
     except Exception:
         pass
-    # Find first { ... last }
     start = cleaned.find("{")
     end = cleaned.rfind("}")
     if start >= 0 and end > start:
@@ -182,7 +183,6 @@ def _transcript_snippet(transcript: List[TranscriptTurn], last_n: int = 8) -> st
 
 def build_adam_leads_router(db, require_admin=None) -> APIRouter:
     router = APIRouter(prefix="/api/adam", tags=["adam-leads"])
-    # Sibling admin router (share module state)
     admin_router = APIRouter(prefix="/api/admin", tags=["adam-leads-admin"])
 
     async def _load_lead(session_id: str) -> Optional[dict]:
@@ -198,7 +198,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         for k, w in weights.items():
             if d.get(k):
                 score += w
-        # small bonus for engagement
         score += min(transcript_len, 20)
         return min(score, 100)
 
@@ -214,7 +213,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
 
         score = _lead_score(LeadProfile(**merged_profile), len(transcript))
         new_status = status or (existing.get("status") if existing else None) or "DRAFT"
-        # Auto-promote to QUALIFIED once we have contact + business context
         p = merged_profile
         if new_status == "DRAFT" and (p.get("email") or p.get("phone")) and (p.get("company") or p.get("name")) and (p.get("goal") or p.get("industry")):
             new_status = "QUALIFIED"
@@ -250,7 +248,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
 
     @router.get("/lead/by-email/{email}")
     async def get_lead_by_email(email: str):
-        """Return the most recent lead for a given email (used for Return Visitor Continuity)."""
         email_norm = email.strip().lower()
         if "@" not in email_norm or len(email_norm) < 5:
             raise HTTPException(status_code=400, detail="Invalid email")
@@ -268,11 +265,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         key = _llm_key()
         if not key:
             raise HTTPException(status_code=503, detail="AI engine not configured")
-        try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-        except Exception:
-            logger.exception("emergentintegrations import failed")
-            raise HTTPException(status_code=503, detail="AI engine unavailable")
 
         system = (
             DISCOVER_SYSTEM
@@ -282,14 +274,17 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
             + _transcript_snippet(payload.transcript, 8)
         )
 
-        chat = LlmChat(
-            api_key=key,
-            session_id=payload.session_id + ":discover",
-            system_message=system,
-        ).with_model("openai", _model_name())
+        client = AsyncOpenAI(api_key=key)
 
         try:
-            raw = await chat.send_message(UserMessage(text=payload.message))
+            response = await client.chat.completions.create(
+                model=_model_name(),
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": payload.message}
+                ]
+            )
+            raw = response.choices[0].message.content
         except Exception:
             logger.exception("ADAM discover LLM call failed")
             raise HTTPException(status_code=502, detail="ADAM is unavailable, try again in a moment")
@@ -308,7 +303,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
                     extracted[k] = v if isinstance(v, str) else str(v)
         ready = bool(parsed.get("ready_for_summary"))
 
-        # Silently persist the extraction alongside the transcript we already have
         try:
             merged = payload.profile.model_dump(exclude_none=True)
             merged.update(extracted)
@@ -350,23 +344,22 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         key = _llm_key()
         if not key:
             raise HTTPException(status_code=503, detail="AI engine not configured")
-        try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-        except Exception:
-            raise HTTPException(status_code=503, detail="AI engine unavailable")
 
         context = "PROFILE:\n" + _profile_snapshot(payload.profile)
         if payload.site_context:
             context += "\n\nSITE CONTEXT:\n" + payload.site_context[:3000]
 
-        chat = LlmChat(
-            api_key=key,
-            session_id=payload.session_id + ":summary",
-            system_message=SUMMARY_SYSTEM,
-        ).with_model("openai", _model_name())
+        client = AsyncOpenAI(api_key=key)
 
         try:
-            raw = await chat.send_message(UserMessage(text=context))
+            response = await client.chat.completions.create(
+                model=_model_name(),
+                messages=[
+                    {"role": "system", "content": SUMMARY_SYSTEM},
+                    {"role": "user", "content": context}
+                ]
+            )
+            raw = response.choices[0].message.content
         except Exception:
             logger.exception("ADAM summary LLM call failed")
             raise HTTPException(status_code=502, detail="Summary generation failed")
@@ -374,13 +367,12 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         parsed = _extract_json(raw)
         business = parsed.get("business") if isinstance(parsed.get("business"), dict) else {}
         website = parsed.get("website") if isinstance(parsed.get("website"), dict) else None
-        # Filter to expected keys only
+        
         biz = {k: str(business.get(k, "")) for k in ("business", "primary_goal", "current_challenge", "opportunity")}
         web = None
         if website and payload.site_context:
             web = {k: str(website.get(k, "")) for k in ("whats_working", "needs_attention", "biggest_opportunity", "quick_win")}
 
-        # Update status → ANALYSIS_COMPLETED
         try:
             await db.adam_leads.update_one(
                 {"session_id": payload.session_id},
@@ -464,7 +456,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
 
     @router.post("/handover")
     async def handover(payload: HandoverRequest):
-        # 1. Update the adam_leads doc
         now = datetime.now(timezone.utc).isoformat()
         existing = await _load_lead(payload.session_id)
         merged_profile = (existing or {}).get("profile", {})
@@ -487,7 +478,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         }
         await db.adam_leads.update_one({"session_id": payload.session_id}, {"$set": lead_doc}, upsert=True)
 
-        # 2. Mirror into existing `contacts` (single canonical lead sink) — never blocks
         contact_doc = {
             "id": str(uuid.uuid4()),
             "name": merged_profile.get("name") or (merged_profile.get("email") or "ADAM lead").split("@")[0],
@@ -515,7 +505,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         except Exception:
             logger.exception("Failed to mirror ADAM lead into contacts")
 
-        # 3. Fire off the Resend team brief (fire and forget)
         html = _brief_html(merged_profile, payload.summary, payload.roadmap_markdown, transcript_dicts, score, payload.session_id)
 
         async def _send():
@@ -531,7 +520,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
                     "subject": subject,
                     "html": html,
                 }
-                # remove None keys
                 params = {k: v for k, v in params.items() if v is not None}
                 await asyncio.to_thread(resend.Emails.send, params)
             except Exception:
@@ -541,7 +529,6 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
 
         return {"lead_id": lead_id, "status": "CONTACT_REQUESTED", "lead_score": score}
 
-    # ---------------- Admin endpoints ---------------- #
     if require_admin is not None:
         from fastapi import Depends, Query
 

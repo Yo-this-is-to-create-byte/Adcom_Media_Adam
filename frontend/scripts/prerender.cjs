@@ -372,11 +372,15 @@ async function prerenderRoute(browser, origin, route) {
     }
     return `<!DOCTYPE html>\n${document.documentElement.outerHTML}`;
   });
-  html = prepareNoJs(cleanupHead(html.split(origin).join('').split('?prerender=1').join('').replace('window.__ADCOM_CAPTURE=1;', '')));
+  html = prepareNoJs(cleanupHead(stripInjectedGtm(html.split(origin).join('').split('?prerender=1').join('').replace('window.__ADCOM_CAPTURE=1;', ''))));
   const file = outputFile(route);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, html);
   await page.close();
+}
+
+function stripInjectedGtm(html) {
+  return html.replace(/<script\b[^>]*\bsrc=["']https:\/\/www\.googletagmanager\.com\/gtm\.js\?[^"']*["'][^>]*>\s*<\/script>/gi, '');
 }
 
 function cleanupHead(html) {
@@ -388,8 +392,9 @@ function cleanupHead(html) {
   if (titles.length > 1) {
     const preferred = [...titles].reverse().find((tag) => !/^<title>\s*Adcom Media\s*<\/title>$/i.test(tag)) || titles[titles.length - 1];
     titles.forEach((tag) => {
-      if (tag !== preferred) head = head.replace(tag, '');
+      head = head.replace(tag, '');
     });
+    head = head.replace(/<head[^>]*>/i, (open) => `${open}${preferred}`);
   }
 
   const hasIndex = /<meta\b[^>]*name=["']robots["'][^>]*content=["']index,\s*follow["'][^>]*>/i.test(head)

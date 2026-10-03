@@ -8,7 +8,7 @@ import Contact from '@/components/Contact';
 import { CaseStudiesEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
-import useSEO from '@/hooks/useSEO';
+import Seo from '@/hooks/useSEO';
 
 const studies = [
   {
@@ -67,10 +67,10 @@ const studies = [
 ];
 
 export default function CaseStudiesPage() {
-  useSEO('case-studies');
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
     <div className="App noise relative">
+      <Seo pageKey="case-studies" />
       <CustomCursor />
       <Header />
       <main>

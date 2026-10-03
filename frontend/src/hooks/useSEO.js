@@ -1,67 +1,73 @@
-import { useEffect } from 'react';
+import { useEffect, useInsertionEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import { PAGE_SEO_DEFAULTS } from '@/lib/seoPages';
+import {
+  DEFAULT_OG_IMAGE,
+  absoluteUrl,
+  buildStructuredData,
+  canonicalUrl,
+  currentPath,
+} from '@/lib/seoHead';
 
-/** Apply SEO overrides from the CMS to the document head.
- *  Usage: `useSEO('home')` inside any page component.
- *  Priority: CMS → explicit fallback → PAGE_SEO_DEFAULTS. */
-export default function useSEO(pageKey, fallback = {}) {
+function pick(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+/** Renders page metadata during the React render so prerendered HTML contains it.
+ *  CMS values, when present, replace the defaults after load. */
+export default function Seo({ pageKey, fallback = {}, article = null, robots, title, description }) {
+  const defaults = (pageKey && PAGE_SEO_DEFAULTS[pageKey]) || {};
+  const [cms, setCms] = useState(null);
+
   useEffect(() => {
-    if (!pageKey) return undefined;
+    if (!pageKey || robots === 'noindex, nofollow') return undefined;
     let alive = true;
-
-    const defaults = PAGE_SEO_DEFAULTS[pageKey] || {};
-    // CMS → curated defaults → call-site fallback
-    const fbTitle = defaults.title || fallback.title;
-    const fbDescription = defaults.description || fallback.description;
-    const fbOgImage = fallback.ogImage;
-
-    const setMeta = (name, value, attr = 'name') => {
-      if (value === undefined || value === null) return;
-      let el = document.querySelector(`meta[${attr}="${name}"]`);
-      if (!value) { if (el) el.parentNode.removeChild(el); return; }
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute(attr, name);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('content', value);
-    };
-    const setLink = (rel, href) => {
-      let el = document.querySelector(`link[rel="${rel}"]`);
-      if (!href) { if (el) el.parentNode.removeChild(el); return; }
-      if (!el) {
-        el = document.createElement('link');
-        el.setAttribute('rel', rel);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('href', href);
-    };
-
-    const apply = (data) => {
-      if (!alive) return;
-      const title = data.seo_title || fbTitle;
-      const desc = data.meta_description || fbDescription;
-      const og = data.og_image || fbOgImage;
-      if (title) document.title = title;
-      setMeta('description', desc);
-      setMeta('og:title', title, 'property');
-      setMeta('og:description', desc, 'property');
-      setMeta('og:image', og, 'property');
-      setMeta('og:type', 'website', 'property');
-      setMeta('twitter:card', og ? 'summary_large_image' : 'summary');
-      setMeta('twitter:title', title);
-      setMeta('twitter:description', desc);
-      setMeta('twitter:image', og);
-      if (data.canonical) setLink('canonical', data.canonical);
-      if (data.no_index) setMeta('robots', 'noindex, nofollow');
-      else setMeta('robots', 'index, follow');
-    };
-
-    // Apply fallback immediately, then overlay CMS data if any
-    apply({});
-    apiGet(`/page-seo/${encodeURIComponent(pageKey)}`).then(apply).catch(() => {});
-
+    apiGet(`/page-seo/${encodeURIComponent(pageKey)}`)
+      .then((data) => { if (alive) setCms(data || {}); })
+      .catch(() => {});
     return () => { alive = false; };
-  }, [pageKey, fallback.title, fallback.description, fallback.ogImage]);
+  }, [pageKey, robots]);
+
+  const resolvedTitle = pick(cms?.seo_title, defaults.title, fallback.title, title) || 'Adcom Media';
+  const resolvedDescription = pick(cms?.meta_description, defaults.description, fallback.description, description);
+  const image = absoluteUrl(pick(cms?.og_image, fallback.ogImage, article?.image, DEFAULT_OG_IMAGE));
+  const canonical = pick(cms?.canonical, fallback.canonical) || canonicalUrl();
+  const robotsContent = robots || (cms?.no_index ? 'noindex, nofollow' : 'index, follow');
+  const noindex = robotsContent.startsWith('noindex');
+
+  useInsertionEffect(() => {
+    if (typeof document !== 'undefined' && resolvedTitle) document.title = resolvedTitle;
+  }, [resolvedTitle]);
+
+  const jsonLd = noindex ? '' : JSON.stringify(buildStructuredData({
+    path: currentPath(),
+    title: resolvedTitle,
+    description: resolvedDescription,
+    canonical,
+    image,
+    article,
+  })).replace(/</g, '\\u003c');
+
+  return (
+    <>
+      <title>{resolvedTitle}</title>
+      {resolvedDescription ? <meta name="description" content={resolvedDescription} /> : null}
+      {noindex ? null : <link rel="canonical" href={canonical} />}
+      <meta name="robots" content={robotsContent} />
+      {noindex ? null : <meta property="og:site_name" content="Adcom Media" />}
+      {noindex ? null : <meta property="og:type" content={article ? 'article' : 'website'} />}
+      {noindex ? null : <meta property="og:title" content={resolvedTitle} />}
+      {noindex || !resolvedDescription ? null : <meta property="og:description" content={resolvedDescription} />}
+      {noindex ? null : <meta property="og:url" content={canonical} />}
+      {noindex || !image ? null : <meta property="og:image" content={image} />}
+      {noindex ? null : <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />}
+      {noindex ? null : <meta name="twitter:title" content={resolvedTitle} />}
+      {noindex || !resolvedDescription ? null : <meta name="twitter:description" content={resolvedDescription} />}
+      {noindex || !image ? null : <meta name="twitter:image" content={image} />}
+      {jsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} /> : null}
+    </>
+  );
 }

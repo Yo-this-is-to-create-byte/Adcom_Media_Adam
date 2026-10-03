@@ -9,24 +9,28 @@ import { BlogEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import { apiGet } from '@/lib/api';
-import useSEO from '@/hooks/useSEO';
+import Seo from '@/hooks/useSEO';
+import { bootstrapBlogPosts, normalizePost } from '@/lib/bootstrapData';
 
 export default function Blog() {
-  useSEO('blog');
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const seeded = bootstrapBlogPosts();
+  const [posts, setPosts] = useState(seeded || []);
+  const [loading, setLoading] = useState(!seeded);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    let live = true;
     apiGet('/blogs').then((d) => {
-      // API returns read_time (snake); components use readTime
-      setPosts(d.map((p) => ({ ...p, readTime: p.read_time || p.readTime })));
+      if (!live) return;
+      setPosts(d.map(normalizePost));
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => { if (live) setLoading(false); });
+    return () => { live = false; };
   }, []);
   const [feature, ...rest] = posts;
 
   return (
     <div className="App noise relative">
+      <Seo pageKey="blog" />
       <CustomCursor />
       <Header />
       <main>

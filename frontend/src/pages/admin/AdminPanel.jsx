@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiGet } from '@/lib/api';
+import Seo from '@/hooks/useSEO';
 import AdminDashboard from './AdminDashboard';
 
 export default function AdminPanel() {
@@ -34,10 +35,16 @@ export default function AdminPanel() {
   if (authState !== 'in') {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <Seo title="Admin" robots="noindex, nofollow" />
         <div className="w-10 h-10 rounded-full border border-white/20 border-t-[#E11D2E] animate-spin" />
       </div>
     );
   }
 
-  return <AdminDashboard user={user} onSignedOut={() => { setUser(null); setAuthState('out'); navigate('/login', { replace: true }); }} />;
+  return (
+    <>
+      <Seo title="Admin" robots="noindex, nofollow" />
+      <AdminDashboard user={user} onSignedOut={() => { setUser(null); setAuthState('out'); navigate('/login', { replace: true }); }} />
+    </>
+  );
 }

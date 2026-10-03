@@ -12,6 +12,8 @@ import { CaseStudiesEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
+import Seo from '@/hooks/useSEO';
+import { isPrerenderSnapshot } from '@/lib/prerenderPass';
 
 /* --------------------------------------------------------------- */
 
@@ -253,9 +255,10 @@ function DecisionMaking() {
 function CountUp({ to, suffix = '', prefix = '', delay = 0 }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
-  const [val, setVal] = React.useState(0);
+  const frozen = React.useState(() => isPrerenderSnapshot())[0];
+  const [val, setVal] = React.useState(frozen ? to : 0);
   useEffect(() => {
-    if (!inView) return;
+    if (frozen || !inView) return undefined;
     const dur = 1700;
     const start = performance.now() + delay;
     let raf;
@@ -267,7 +270,7 @@ function CountUp({ to, suffix = '', prefix = '', delay = 0 }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [inView, to, delay]);
+  }, [inView, to, delay, frozen]);
   return <span ref={ref}>{prefix}{val}{suffix}</span>;
 }
 
@@ -715,6 +718,7 @@ export default function CaseStudySharmaFurniture() {
 
   return (
     <div className="App noise relative">
+      <Seo pageKey="case-studies-sharma-furniture" />
       <CustomCursor />
       <Header />
       <main>

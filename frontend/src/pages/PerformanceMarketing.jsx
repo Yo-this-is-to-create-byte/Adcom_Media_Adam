@@ -19,7 +19,7 @@ import { ServiceEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
-import useSEO from '@/hooks/useSEO';
+import Seo from '@/hooks/useSEO';
 
 /* ------------------------------------------------------------------ */
 /*  Reusable bits                                                     */
@@ -664,13 +664,13 @@ function Closing() {
 /* ------------------------------------------------------------------ */
 
 export default function PerformanceMarketing() {
-  useSEO('services-performance-marketing');
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
   return (
     <div className="App noise relative">
+      <Seo pageKey="services-performance-marketing" />
       <CustomCursor />
       <Header />
       <main>

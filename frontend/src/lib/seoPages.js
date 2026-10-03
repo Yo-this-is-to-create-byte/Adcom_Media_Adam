@@ -109,7 +109,7 @@ export const PAGE_SEO_DEFAULTS = {
   'industries-b2b': {
     title: 'Digital Marketing for B2B Companies | Adcom Media',
     description:
-      'Grow your B2B business with SEO, AI SEO, LinkedIn marketing, paid ads, content, websites and lead generation strategies from Adcom Media.',
+      'End-to-end B2B growth for companies selling into buying committees, covering positioning, category design, demand generation, ABM, thought leadership and sales enablement.',
   },
   'industries-ecommerce': {
     title: 'E-commerce Digital Marketing Agency | Adcom Media',
@@ -120,5 +120,35 @@ export const PAGE_SEO_DEFAULTS = {
     title: 'Digital Marketing Agency in Pune | Adcom Media',
     description:
       'Adcom Media is a digital marketing agency in Pune offering SEO, AI SEO, Google Ads, Meta Ads, social media, branding, web development and B2B marketing.',
+  },
+  'services-industrial-3d': {
+    title: 'Industrial 3D & Digital Showroom | Adcom Media',
+    description:
+      '3D product models, workflow films and a branded digital showroom so industrial buyers can explore, specify and enquire before a quote.',
+  },
+  'case-studies-sharma-furniture': {
+    title: 'Sharma Furniture Case Study | Adcom Media',
+    description:
+      'How Adcom Media helped Sharma Furniture get discovered and chosen online, lifting rankings, inbound calls and qualified enquiries.',
+  },
+  'case-studies-prochem': {
+    title: 'Prochem Turnkey Projects Case Study | Adcom Media',
+    description:
+      'How Adcom Media built a founder-led LinkedIn presence for Prochem so buyers remember the engineering brand before a tender opens.',
+  },
+  'case-studies-profotech': {
+    title: 'Profotech Engineering Case Study | Adcom Media',
+    description:
+      'How Adcom Media rebuilt Profotech Engineering across brand, digital and print so the identity matches the precision of the work.',
+  },
+  'case-studies-aus-tyre': {
+    title: 'Australian Tyre Brand Case Study | Adcom Media',
+    description:
+      'How Adcom Media turned a specialist Australian tyre brand paid media program into a 7.5x ROAS engine and 100x business growth in a year.',
+  },
+  'case-studies-skylarr': {
+    title: 'Skylarr Labs Case Study | Adcom Media',
+    description:
+      'How Adcom Media rebuilt the Skylarr Labs website and SEO so distributors researching a PCD pharma franchise find the brand first.',
   },
 };

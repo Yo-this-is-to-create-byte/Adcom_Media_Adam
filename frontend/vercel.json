@@ -12,6 +12,6 @@
     { "src": "^/android-chrome-512x512\\.png$", "dest": "/android-chrome-512x512.png" },
     { "src": "^/site\\.webmanifest$", "dest": "/site.webmanifest" },
     { "src": "^/api/(.*)", "dest": "https://api.adcommedia.in/api/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "src": "/(.*)", "dest": "/spa.html" }
   ]
 }

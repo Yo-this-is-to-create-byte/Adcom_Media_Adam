@@ -133,6 +133,8 @@ function writeSpaShell() {
   let shell = fs.readFileSync(shellPath, 'utf8');
   shell = shell.replace(/<noscript>\s*You need to enable JavaScript to run this app\.\s*<\/noscript>/gi, '');
   shell = shell.replace(/<meta\b[^>]*name=["']robots["'][^>]*>/gi, '');
+  shell = shell.replace(/<meta\b[^>]*name=["']description["'][^>]*>/gi, '');
+  shell = shell.replace(/<link\b[^>]*rel=["']canonical["'][^>]*>/gi, '');
   shell = shell.replace(/<head[^>]*>/i, (head) => `${head}\n        <meta name="robots" content="noindex, nofollow" />`);
   shell = shell.replace(/<title>[^<]*<\/title>/i, '<title>Adcom Media</title>');
   fs.writeFileSync(path.join(BUILD, 'spa.html'), shell);
@@ -518,7 +520,7 @@ function validateHtml(route, html) {
   if (!ogTitle) errors.push('missing og:title');
   if (!twitter) errors.push('missing twitter:card');
   if (/You need to enable JavaScript/i.test(html)) errors.push('javascript-required message');
-  if (/assets\.emergent\.sh|emergent-main\.js/i.test(html)) errors.push('emergent script');
+  if (/assets\.emergent\.sh|emergent-main\.js|emergentagent\.com/i.test(html)) errors.push('emergent resource');
   if (/Loading essays|Loading essay/i.test(text)) errors.push('blog still in loading state');
   if (!/Adcom/i.test(text) || text.length < 400) errors.push('not enough readable text');
   if (!ldBlocks.length) errors.push('missing JSON-LD');

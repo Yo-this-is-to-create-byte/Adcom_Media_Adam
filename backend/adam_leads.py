@@ -35,10 +35,8 @@ def _llm_key() -> Optional[str]:
 
 
 def _model_name() -> str:
-    model = os.environ.get("ADAM_LLM_MODEL", "gpt-4o")
-    if "sol" in model:
-        return "gpt-4-turbo"
-    return model
+    # Changed to Google Gemini's free model
+    return "gemini-3.1-flash-lite"
 
 
 PROFILE_FIELDS = [
@@ -274,7 +272,11 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
             + _transcript_snippet(payload.transcript, 8)
         )
 
-        client = AsyncOpenAI(api_key=key)
+        # Pointing the OpenAI client to Google Gemini's endpoint
+        client = AsyncOpenAI(
+            api_key=key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
 
         try:
             response = await client.chat.completions.create(
@@ -349,7 +351,11 @@ def build_adam_leads_router(db, require_admin=None) -> APIRouter:
         if payload.site_context:
             context += "\n\nSITE CONTEXT:\n" + payload.site_context[:3000]
 
-        client = AsyncOpenAI(api_key=key)
+        # Pointing the OpenAI client to Google Gemini's endpoint
+        client = AsyncOpenAI(
+            api_key=key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
 
         try:
             response = await client.chat.completions.create(

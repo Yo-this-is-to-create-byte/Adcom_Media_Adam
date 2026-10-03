@@ -25,11 +25,8 @@ def _llm_key() -> Optional[str]:
 
 
 def _model_name() -> str:
-    # Use standard OpenAI models by default if old custom name is found
-    model = os.environ.get("ADAM_LLM_MODEL", "gpt-4o")
-    if "sol" in model:
-        return "gpt-4-turbo"
-    return model
+    # Changed to Google Gemini's free model
+    return "gemini-3.1-flash-lite"
 
 MODE_PROMPTS = {
     "strategy": (
@@ -181,7 +178,12 @@ def build_adam_router() -> APIRouter:
             raise HTTPException(status_code=503, detail="AI engine not configured")
 
         system_msg = _build_system_message(payload.mode, payload.site_context)
-        client = AsyncOpenAI(api_key=key)
+        
+        # Pointing the OpenAI client to Google Gemini's endpoint
+        client = AsyncOpenAI(
+            api_key=key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
 
         messages = [{"role": "system", "content": system_msg}]
         for msg in payload.history[-10:]:  # Keep last 10 messages for context
@@ -233,7 +235,11 @@ def build_adam_router() -> APIRouter:
         if payload.site_context:
             system += "\n\nBRAND CONTEXT:\n" + payload.site_context[:3500]
 
-        client = AsyncOpenAI(api_key=key)
+        # Pointing the OpenAI client to Google Gemini's endpoint
+        client = AsyncOpenAI(
+            api_key=key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
 
         try:
             response = await client.chat.completions.create(

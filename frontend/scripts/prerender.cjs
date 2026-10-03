@@ -208,15 +208,92 @@ function isLocal(url) {
   }
 }
 
+function loadPlaywright() {
+  try {
+    return require('playwright-core');
+  } catch {
+    return require('playwright');
+  }
+}
+
+function commandExists(name) {
+  try {
+    execSync(process.platform === 'win32' ? `where ${name}` : `command -v ${name}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function playwrightCli() {
+  const coreCli = path.join(FRONTEND, 'node_modules', 'playwright-core', 'cli.js');
+  if (fs.existsSync(coreCli)) return `node "${coreCli}"`;
+  const fullCli = path.join(FRONTEND, 'node_modules', 'playwright', 'cli.js');
+  if (fs.existsSync(fullCli)) return `node "${fullCli}"`;
+  return 'npx playwright';
+}
+
+function dnfInstall(packages) {
+  try {
+    execSync(`dnf install -y ${packages.join(' ')}`, { stdio: 'inherit', timeout: 300000 });
+    return;
+  } catch (error) {
+    console.warn(`Combined dnf install failed (${String(error.message).split('\n')[0]}). Installing packages individually.`);
+  }
+  packages.forEach((pkg) => {
+    try {
+      execSync(`dnf install -y ${pkg}`, { stdio: 'inherit', timeout: 180000 });
+    } catch {
+      console.warn(`Could not install ${pkg}.`);
+    }
+  });
+}
+
+function installLinuxBrowserSupport() {
+  process.env.PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = '1';
+  const runner = playwrightCli();
+  console.log('Installing Chromium system libraries for the prerender browser...');
+  if (commandExists('dnf')) {
+    dnfInstall([
+      'alsa-lib', 'atk', 'at-spi2-atk', 'at-spi2-core', 'cairo', 'cups-libs', 'gtk3',
+      'libXcomposite', 'libXcursor', 'libXdamage', 'libXext', 'libXi', 'libXrandr',
+      'libXScrnSaver', 'libXtst', 'libdrm', 'libxkbcommon', 'mesa-libgbm', 'nspr',
+      'nss', 'pango',
+    ]);
+  } else {
+    try {
+      execSync(`${runner} install-deps chromium`, {
+        cwd: FRONTEND,
+        stdio: 'inherit',
+        env: process.env,
+        timeout: 300000,
+      });
+    } catch (error) {
+      console.warn(`playwright install-deps did not complete (${String(error.message).split('\n')[0]}).`);
+    }
+  }
+  console.log('Installing Playwright Chromium...');
+  execSync(`${runner} install chromium`, {
+    cwd: FRONTEND,
+    stdio: 'inherit',
+    env: process.env,
+    timeout: 300000,
+  });
+}
+
 async function launchBrowser() {
   let playwright;
   try {
-    playwright = require('playwright');
+    playwright = loadPlaywright();
   } catch {
-    console.error('playwright is not installed. Add it with npm install --save-dev playwright in frontend/.');
+    console.error('playwright-core is not installed. Add it with npm install playwright-core in frontend/.');
     process.exit(1);
   }
   const args = ['--no-sandbox', '--disable-dev-shm-usage'];
+  if (process.platform === 'linux') {
+    args.push('--disable-gpu');
+    installLinuxBrowserSupport();
+  }
   const attempts = [
     () => playwright.chromium.launch({ channel: 'chrome', headless: true, args }),
     () => playwright.chromium.launch({ channel: 'msedge', headless: true, args }),
@@ -230,9 +307,12 @@ async function launchBrowser() {
       lastError = error;
     }
   }
-  console.log(`Bundled Chromium is not available (${lastError.message}). Installing it...`);
-  execSync('npx playwright install chromium', { cwd: FRONTEND, stdio: 'inherit' });
-  return playwright.chromium.launch({ headless: true, args });
+  if (process.platform !== 'linux') {
+    console.log(`Bundled Chromium is not available (${lastError.message}). Installing it...`);
+    execSync(`${playwrightCli()} install chromium`, { cwd: FRONTEND, stdio: 'inherit', env: process.env });
+    return playwright.chromium.launch({ headless: true, args });
+  }
+  throw lastError;
 }
 
 async function prerenderRoute(browser, origin, route) {

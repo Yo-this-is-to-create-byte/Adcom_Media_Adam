@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /adcom-admin
+Disallow: /login
+Disallow: /auth/
+Disallow: /spa.html
 
 Sitemap: https://adcommedia.in/sitemap.xml

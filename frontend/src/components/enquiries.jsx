@@ -170,6 +170,7 @@ export const PrimaryContactEnquiry = () => (
     description="Tell us about your business and where you want to grow."
     cta="Let's Grow Together"
     source="contact"
+    titleAs="h1"
     fields={[
       { name: 'name', label: 'Full name', required: true },
       { name: 'company', label: 'Company name' },

@@ -52,7 +52,8 @@ import CaseStudySkylarr from '@/pages/CaseStudySkylarr';
 import AdminPanel from '@/pages/admin/AdminPanel';
 import Login from '@/pages/Login';
 import GoogleAuthDone from '@/pages/GoogleAuthDone';
-import useSEO from '@/hooks/useSEO';
+import Seo from '@/hooks/useSEO';
+import PrerenderReady from '@/components/PrerenderReady';
 
 function AnalyticsTracker() {
   const location = useLocation();
@@ -63,9 +64,9 @@ function AnalyticsTracker() {
 }
 
 function Landing() {
-  useSEO('home');
   return (
     <div className="App noise relative">
+      <Seo pageKey="home" />
       <CustomCursor />
       <Header />
       <main>
@@ -137,6 +138,7 @@ function App() {
   return (
     <BrowserRouter>
       <AppRouter />
+      <PrerenderReady />
     </BrowserRouter>
   );
 }

@@ -123,6 +123,28 @@ export default function Header() {
 
   return (
     <>
+      <nav aria-label="Site" className="sr-only">
+        <ul>
+          {navLinks.map((l) => (
+            <li key={l.label}>
+              {l.type === 'route' ? (
+                <Link to={l.href} onClick={(e) => { e.preventDefault(); goRoute(l.href); }}>{l.label}</Link>
+              ) : (
+                <a href={`/#${l.id}`} onClick={(e) => { e.preventDefault(); go(l.id); }}>{l.label}</a>
+              )}
+            </li>
+          ))}
+          {servicePages.map((s) => (
+            <li key={s.href}><Link to={s.href} onClick={(e) => { e.preventDefault(); goRoute(s.href); }}>{s.label}</Link></li>
+          ))}
+          {industryPages.map((s) => (
+            <li key={s.href}><Link to={s.href} onClick={(e) => { e.preventDefault(); goRoute(s.href); }}>{s.label}</Link></li>
+          ))}
+          {locationPages.map((s) => (
+            <li key={s.href}><Link to={s.href} onClick={(e) => { e.preventDefault(); goRoute(s.href); }}>{s.label}</Link></li>
+          ))}
+        </ul>
+      </nav>
       <motion.header
         initial={{ y: -40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -166,13 +188,14 @@ export default function Header() {
           </a>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <button
+            <Link
+              to="/contact"
               data-testid={NAV.ctaButton}
-              onClick={() => goRoute('/contact')}
+              onClick={(e) => { e.preventDefault(); goRoute('/contact'); }}
               className="text-sm md:text-[15px] font-medium text-white/85 hover:text-white transition-colors"
             >
               Contact Us
-            </button>
+            </Link>
 
             <span className="h-5 w-px bg-white/20" aria-hidden="true" />
 

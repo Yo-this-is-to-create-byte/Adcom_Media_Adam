@@ -9,7 +9,7 @@ import { AboutEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
-import useSEO from '@/hooks/useSEO';
+import Seo from '@/hooks/useSEO';
 
 /* Team photos disabled for now
 const team = [
@@ -30,7 +30,6 @@ const values = [
 ];
 
 export default function AboutPage() {
-  useSEO('about');
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
@@ -39,6 +38,7 @@ export default function AboutPage() {
 
   return (
     <div className="App noise relative">
+      <Seo pageKey="about" />
       <CustomCursor />
       <Header />
 

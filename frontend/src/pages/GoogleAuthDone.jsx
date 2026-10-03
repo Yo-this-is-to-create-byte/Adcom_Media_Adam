@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiPost } from '@/lib/api';
+import Seo from '@/hooks/useSEO';
 
 /** Completes Google OAuth: exchanges one-time code for session cookie, then opens admin. */
 export default function GoogleAuthDone() {
@@ -44,6 +45,7 @@ export default function GoogleAuthDone() {
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+      <Seo title="Signing in" robots="noindex, nofollow" />
       <div className="text-center max-w-md">
         <div className="w-14 h-14 mx-auto mb-6 rounded-full border border-[#E11D2E]/40 border-t-[#E11D2E] animate-spin" />
         {error ? (

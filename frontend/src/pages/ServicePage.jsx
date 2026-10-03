@@ -9,14 +9,8 @@ import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
 import { ServiceEnquiry } from '@/components/enquiries';
-import useSEO from '@/hooks/useSEO';
-
-function derivePageKey() {
-  if (typeof window === 'undefined') return null;
-  const p = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
-  if (!p) return 'home';
-  return p.replace(/\//g, '-');
-}
+import Seo from '@/hooks/useSEO';
+import { pageKeyFromLocation } from '@/lib/seoHead';
 
 /* Small primitives reused across service pages */
 
@@ -447,13 +441,14 @@ function Closing({ headlineHtml, body }) {
 
 export default function ServicePage({ data }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
-  useSEO(derivePageKey(), {
-    title: `${data.service} · Adcom Media`,
-    description: typeof data?.hero?.sub === 'string' ? data.hero.sub : undefined,
-  });
+  const description = typeof data?.hero?.sub === 'string' ? data.hero.sub : undefined;
 
   return (
     <div className="App noise relative">
+      <Seo
+        pageKey={pageKeyFromLocation()}
+        fallback={{ title: `${data.service} · Adcom Media`, description }}
+      />
       <CustomCursor />
       <Header />
       <main>

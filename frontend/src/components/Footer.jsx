@@ -7,8 +7,8 @@ const cols = [
   {
     title: 'Studio',
     links: [
-      { label: 'Work', href: '#work' },
-      { label: 'Services', href: '#services' },
+      { label: 'Work', href: '/#work' },
+      { label: 'Services', href: '/#services' },
       { label: 'Process', href: '/process' },
       { label: 'About', href: '/about' },
     ],
@@ -54,6 +54,20 @@ export default function Footer() {
   const handleClick = (e, href) => {
     if (href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('http')) return;
     e.preventDefault();
+    if (href.startsWith('/#')) {
+      const id = href.slice(2);
+      if (location.pathname !== '/') {
+        navigate(`/#${id}`);
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
+      } else {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
     if (href.startsWith('/')) {
       if (location.pathname === href) {
         window.scrollTo({ top: 0, behavior: 'smooth' });

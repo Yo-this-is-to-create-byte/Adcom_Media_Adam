@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { isPrerenderSnapshot } from '@/lib/prerenderPass';
 
 function useCounter(target, isVisible, duration = 2200) {
-  const [value, setValue] = useState(0);
+  const frozen = useState(() => isPrerenderSnapshot())[0];
+  const [value, setValue] = useState(frozen ? target : 0);
   useEffect(() => {
-    if (!isVisible) return;
+    if (frozen || !isVisible) return undefined;
     let raf;
     const start = performance.now();
     const tick = (now) => {
@@ -15,7 +17,7 @@ function useCounter(target, isVisible, duration = 2200) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [isVisible, target, duration]);
+  }, [frozen, isVisible, target, duration]);
   return value;
 }
 

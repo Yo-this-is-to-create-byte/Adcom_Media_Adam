@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { apiGet, apiPost, API_URL } from '@/lib/api';
+import Seo from '@/hooks/useSEO';
 
 function goToGoogleAuth() {
   window.location.href = `${API_URL}/auth/google/start`;
@@ -59,6 +60,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative flex items-center justify-center px-6">
+      <Seo title="Sign in" robots="noindex, nofollow" />
       {/* ambient */}
       <div className="absolute inset-0 pointer-events-none opacity-60"
            style={{ backgroundImage: 'radial-gradient(circle at 30% 30%, rgba(225,29,46,0.14), transparent 55%), radial-gradient(circle at 80% 80%, rgba(225,29,46,0.06), transparent 55%)' }} />

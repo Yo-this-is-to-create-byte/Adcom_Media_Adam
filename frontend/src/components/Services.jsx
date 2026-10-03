@@ -7,9 +7,9 @@ import { SERVICES } from '@/constants/testIds';
 const services = [
   { slug: 'growth-marketing', title: 'Growth Marketing', desc: 'Full-funnel growth systems that compound month over month.', Icon: TrendingUp, href: '/services/growth-marketing' },
   { slug: 'performance-marketing', title: 'Performance Marketing', desc: 'Paid media engineered for ROAS, Meta, Google, programmatic.', Icon: Target, href: '/services/performance-marketing' },
-  { slug: 'seo', title: 'SEO', desc: 'Editorial-grade SEO built for ranking durability and authority.', Icon: Search, href: null },
+  { slug: 'seo', title: 'SEO', desc: 'Editorial-grade SEO built for ranking durability and authority.', Icon: Search, href: '/services/seo' },
   { slug: 'ai-seo', title: 'AI SEO', desc: 'Optimised for LLM answers, ChatGPT, Perplexity and Gemini.', Icon: Bot, href: '/services/ai-seo' },
-  { slug: 'linkedin-marketing', title: 'LinkedIn Marketing', desc: 'Founder-led storytelling that converts inbound into pipeline.', Icon: Linkedin, href: null },
+  { slug: 'linkedin-marketing', title: 'LinkedIn Marketing', desc: 'Founder-led storytelling that converts inbound into pipeline.', Icon: Linkedin, href: '/services/linkedin-marketing' },
   { slug: 'brand-strategy', title: 'Brand Strategy', desc: 'Positioning, narrative and identity systems for category leaders.', Icon: Sparkles, href: '/services/brand-strategy' },
   { slug: 'content-production', title: 'Content Production', desc: 'Cinematic video, photography and editorial at scale.', Icon: Film, href: null },
   { slug: 'marketing-automation', title: 'Marketing Automation', desc: 'Lifecycle, CRM, lead routing and revenue ops built right.', Icon: Workflow, href: null },

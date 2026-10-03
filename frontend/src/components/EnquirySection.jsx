@@ -24,6 +24,7 @@ export default function EnquirySection({
   source,
   fields,
   variant = 'section', // 'section' | 'compact'
+  titleAs = 'h2',
 }) {
   const [form, setForm] = useState(() =>
     fields.reduce((acc, f) => ({ ...acc, [f.name]: f.type === 'multiselect' ? [] : '' }), {})
@@ -73,9 +74,15 @@ export default function EnquirySection({
           {/* Left */}
           <div className="lg:col-span-5">
             <div className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#F43F5E] mb-6">{kicker}</div>
-            <h2 className="font-display text-[40px] md:text-[56px] lg:text-[64px] leading-[0.95] tracking-tighter">
-              {headline}
-            </h2>
+            {titleAs === 'h1' ? (
+              <h1 className="font-display text-[40px] md:text-[56px] lg:text-[64px] leading-[0.95] tracking-tighter">
+                {headline}
+              </h1>
+            ) : (
+              <h2 className="font-display text-[40px] md:text-[56px] lg:text-[64px] leading-[0.95] tracking-tighter">
+                {headline}
+              </h2>
+            )}
             {description && (
               <p className="mt-6 text-[17px] md:text-[19px] text-[#A0A0A0] leading-relaxed max-w-md">
                 {description}

@@ -13,6 +13,8 @@ import { CaseStudiesEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import MagneticButton from '@/components/MagneticButton';
+import Seo from '@/hooks/useSEO';
+import { isPrerenderSnapshot } from '@/lib/prerenderPass';
 
 /* --------------------------------------------------------------- */
 
@@ -44,9 +46,10 @@ const fadeUp = {
 function CountUp({ to, suffix = '', prefix = '', separator = false, decimals = 0 }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-80px' });
-  const [val, setVal] = useState(0);
+  const frozen = useState(() => isPrerenderSnapshot())[0];
+  const [val, setVal] = useState(frozen ? to : 0);
   useEffect(() => {
-    if (!inView) return;
+    if (frozen || !inView) return undefined;
     const dur = 1800;
     const start = performance.now();
     let raf;
@@ -58,7 +61,7 @@ function CountUp({ to, suffix = '', prefix = '', separator = false, decimals = 0
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [inView, to]);
+  }, [inView, to, frozen]);
   const display = decimals > 0
     ? val.toFixed(decimals)
     : separator ? Math.floor(val).toLocaleString() : Math.floor(val).toString();
@@ -718,6 +721,7 @@ export default function CaseStudyProchem() {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, []);
   return (
     <div className="App noise relative">
+      <Seo pageKey="case-studies-prochem" />
       <CustomCursor />
       <Header />
       <main>

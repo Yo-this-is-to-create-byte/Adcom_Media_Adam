@@ -8,7 +8,8 @@ import { BlogEnquiry } from '@/components/enquiries';
 import FAQ from '@/components/FAQ';
 import CustomCursor from '@/components/CustomCursor';
 import { apiGet } from '@/lib/api';
-import useSEO from '@/hooks/useSEO';
+import Seo from '@/hooks/useSEO';
+import { bootstrapBlogPost, normalizePost } from '@/lib/bootstrapData';
 
 function renderParagraph(line, i) {
   if (line.startsWith('## ')) {
@@ -31,19 +32,30 @@ function renderParagraph(line, i) {
 }
 
 function normalize(p) {
-  return { ...p, readTime: p.read_time || p.readTime };
+  return normalizePost(p);
 }
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const [post, setPost] = useState(null);
-  const [related, setRelated] = useState([]);
-  const [status, setStatus] = useState('loading');
-  useSEO(post ? `blog-${post.slug}` : null, {
-    title: post ? (post.seo_title || `${post.title} · Adcom Journal`) : null,
-    description: post ? (post.meta_description || post.excerpt) : null,
-    ogImage: post ? (post.og_image || post.cover) : null,
-  });
+  const initial = bootstrapBlogPost(slug);
+  const [state, setState] = useState(() => ({
+    slug,
+    post: initial?.post || null,
+    related: initial?.related || [],
+    status: initial?.post ? 'ok' : 'loading',
+  }));
+
+  if (state.slug !== slug) {
+    const next = bootstrapBlogPost(slug);
+    setState({
+      slug,
+      post: next?.post || null,
+      related: next?.related || [],
+      status: next?.post ? 'ok' : 'loading',
+    });
+  }
+
+  const { post, related, status } = state;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -55,21 +67,48 @@ export default function BlogPost() {
           apiGet('/blogs'),
         ]);
         if (!live) return;
-        setPost(normalize(p));
-        setRelated(all.filter((x) => x.slug !== p.slug).slice(0, 2).map(normalize));
-        setStatus('ok');
+        setState({
+          slug,
+          post: normalize(p),
+          related: all.filter((x) => x.slug !== p.slug).slice(0, 2).map(normalize),
+          status: 'ok',
+        });
       } catch {
         if (!live) return;
-        setStatus('notfound');
+        setState((prev) => (
+          prev.post && prev.slug === slug
+            ? prev
+            : { slug, post: null, related: [], status: 'notfound' }
+        ));
       }
     })();
     return () => { live = false; };
   }, [slug]);
 
+  const seo = (
+    <Seo
+      pageKey={post ? `blog-${post.slug}` : null}
+      fallback={{
+        title: post ? (post.seo_title || `${post.title} · Adcom Journal`) : 'Adcom Journal',
+        description: post ? (post.meta_description || post.excerpt) : undefined,
+        ogImage: post ? (post.og_image || post.cover) : undefined,
+      }}
+      article={post ? {
+        headline: post.title,
+        description: post.meta_description || post.excerpt,
+        image: post.og_image || post.cover,
+        datePublished: post.date,
+        authorName: post.author?.name,
+        section: post.category,
+      } : null}
+    />
+  );
+
   if (status === 'notfound') return <Navigate to="/blog" replace />;
   if (status === 'loading' || !post) {
     return (
       <div className="App noise relative min-h-screen bg-black">
+        {seo}
         <CustomCursor />
         <Header />
         <div className="pt-40 text-center text-white/40 text-sm">Loading essay…</div>
@@ -79,6 +118,7 @@ export default function BlogPost() {
 
   return (
     <div className="App noise relative">
+      {seo}
       <CustomCursor />
       <Header />
       <main>

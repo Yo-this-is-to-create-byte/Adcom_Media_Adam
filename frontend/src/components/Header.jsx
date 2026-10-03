@@ -166,7 +166,7 @@ export default function Header() {
             aria-label="Adcom Media, home"
           >
             <img
-              src="https://customer-assets.emergentagent.com/job_adcom-vault/artifacts/4bimeq2z_Adcom%20Logo-03.png"
+              src="/adcom-logo.png"
               alt="Adcom Media"
               className={`h-10 md:h-12 w-auto object-contain transition-transform ${logoGlow ? 'adam-logo-glow scale-105' : ''}`}
             />
